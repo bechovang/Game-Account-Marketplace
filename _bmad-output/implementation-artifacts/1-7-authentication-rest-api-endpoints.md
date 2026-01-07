@@ -1,6 +1,6 @@
 # Story 1.7: Authentication REST API Endpoints
 
-Status: review
+Status: done
 
 ## Story
 
@@ -244,3 +244,87 @@ Story 1.7 completed successfully on 2026-01-07.
 - `backend-java/src/main/java/com/gameaccount/marketplace/controller/auth/AuthController.java` (CREATE)
 - `backend-java/src/main/java/com/gameaccount/marketplace/controller/user/UserController.java` (CREATE)
 - `backend-java/src/main/java/com/gameaccount/marketplace/dto/request/UpdateProfileRequest.java` (CREATE)
+
+---
+
+## Review Follow-ups (AI Code Review - 2026-01-07)
+
+**Issues Found and Fixed:**
+
+### ✅ FIXED - Generic Exception Type (MEDIUM)
+- **Issue**: AuthController.getCurrentUser() and UserController.updateProfile() threw generic RuntimeException instead of ResourceNotFoundException
+- **Fix**: Replaced `new RuntimeException("User not found")` with `new ResourceNotFoundException("User not found")` in both controllers
+- **Files Modified**:
+  - AuthController.java:44 - Now throws ResourceNotFoundException
+  - UserController.java:31 - Now throws ResourceNotFoundException
+- **Verified**: Maven compilation successful after fix
+
+### ✅ VERIFIED - Build Compilation (MEDIUM)
+- **Action**: Ran `mvn clean compile` successfully on 2026-01-07
+- **Result**: BUILD SUCCESS - 39 source files compiled
+- **Verified**: All controllers compile correctly after exception fix
+
+### 📝 NOTED - Git Reality vs Story Claims (MEDIUM)
+- **Issue**: No dedicated commit for story 1.7; all work was part of massive "Initial commit" (47b7ef8)
+- **Impact**: Cannot trace which files belong specifically to story 1.7
+- **Action**: Documented here for transparency; this is a historical artifact from initial project setup
+
+### ✅ VERIFIED - AuthController Implementation
+- **Annotations**: @RestController, @RequestMapping("/api/auth"), @CrossOrigin(origins = "${frontend.url}")
+- **Dependencies injected**: AuthService, UserRepository
+- **POST /api/auth/register**:
+  - Accepts RegisterRequest (email, password, fullName)
+  - Validates input with @Valid annotation
+  - Returns 201 CREATED with AuthResponse (token, userId, email, role)
+- **POST /api/auth/login**:
+  - Accepts LoginRequest (email, password)
+  - Validates input with @Valid annotation
+  - Returns 200 OK with AuthResponse on success
+  - Returns 401 for invalid credentials (via AuthenticationManager)
+- **GET /api/auth/me**:
+  - Returns UserResponse for authenticated user
+  - Returns 401 if no valid JWT token provided (via JwtAuthenticationFilter)
+  - Extracts userId by looking up User from email in UserDetails
+- **All endpoints properly configured**: HTTP status codes, validation, CORS
+
+### ✅ VERIFIED - UserController Implementation
+- **Annotations**: @RestController, @RequestMapping("/api/users"), @CrossOrigin(origins = "${frontend.url}")
+- **Dependencies injected**: AuthService, UserRepository
+- **PUT /api/users/profile**:
+  - Accepts UpdateProfileRequest (fullName, avatar)
+  - Validates input with @Valid annotation
+  - Extracts userId from authenticated user via @AuthenticationPrincipal
+  - Returns 200 OK with updated UserResponse
+- **Password change endpoint**: Commented out (marked as TODO in story - acceptable)
+
+### ✅ VERIFIED - Request/Response DTOs
+- **RegisterRequest**: @NotBlank and @Email on email, @Size(6-100) on password, @Size(2-100) on fullName
+- **LoginRequest**: @NotBlank and @Email on email, @NotBlank on password
+- **UpdateProfileRequest**: Optional fullName and avatar fields
+- **AuthResponse**: token, userId, email, role (no password - secure)
+- **UserResponse**: All user fields (id, email, fullName, avatar, role, status, balance, rating, totalReviews)
+
+### ✅ VERIFIED - Security & Authentication
+- **@AuthenticationPrincipal**: Used to extract authenticated UserDetails from SecurityContext
+- **userId extraction**: Fixed by looking up User from email (proper implementation)
+- **Exception handling**: Now uses ResourceNotFoundException with @ResponseStatus(NOT_FOUND)
+- **@Valid annotation**: Applied to all @RequestBody parameters for validation
+- **HTTP status codes**: Register returns 201 CREATED, others return 200 OK
+
+### ✅ VERIFIED - CORS Configuration
+- **@CrossOrigin**: Configured on both controllers with origins = "${frontend.url}"
+- **application.yml**: frontend.url defaults to http://localhost:3000
+- **SecurityConfig**: Also has global CORS configuration (belt and suspenders approach)
+
+**Code Review Summary:**
+- Total Issues Found: 2 (0 HIGH, 2 MEDIUM, 0 LOW)
+- Issues Fixed: 1 (exception type)
+- Issues Verified: 1 (build compilation)
+- Issues Documented: 1 (git transparency)
+- Final Decision: ✅ Story marked as **done** - all acceptance criteria met, controllers verified and fixed
+
+**Controller Pattern Verified:**
+- ✅ REST controllers delegate to AuthService (shared business logic)
+- ✅ Clean separation of concerns (controllers → service → repository)
+- ✅ Proper use of Spring MVC annotations (@RestController, @RequestMapping, @PostMapping, etc.)
+- ✅ Consistent exception handling with proper HTTP status codes

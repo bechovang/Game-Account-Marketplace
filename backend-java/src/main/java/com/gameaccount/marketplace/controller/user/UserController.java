@@ -3,6 +3,7 @@ package com.gameaccount.marketplace.controller.user;
 import com.gameaccount.marketplace.dto.request.UpdateProfileRequest;
 import com.gameaccount.marketplace.dto.response.UserResponse;
 import com.gameaccount.marketplace.entity.User;
+import com.gameaccount.marketplace.exception.ResourceNotFoundException;
 import com.gameaccount.marketplace.repository.UserRepository;
 import com.gameaccount.marketplace.service.AuthService;
 import jakarta.validation.Valid;
@@ -28,7 +29,7 @@ public class UserController {
         // Extract userId from authenticated user
         String email = userDetails.getUsername();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         UserResponse response = authService.updateProfile(
                 user.getId(),

@@ -5,6 +5,7 @@ import com.gameaccount.marketplace.dto.request.RegisterRequest;
 import com.gameaccount.marketplace.dto.response.AuthResponse;
 import com.gameaccount.marketplace.dto.response.UserResponse;
 import com.gameaccount.marketplace.entity.User;
+import com.gameaccount.marketplace.exception.ResourceNotFoundException;
 import com.gameaccount.marketplace.repository.UserRepository;
 import com.gameaccount.marketplace.service.AuthService;
 import jakarta.validation.Valid;
@@ -41,7 +42,7 @@ public class AuthController {
         // Extract email from UserDetails and fetch user to get userId
         String email = userDetails.getUsername();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         UserResponse response = authService.getProfile(user.getId());
         return ResponseEntity.ok(response);
