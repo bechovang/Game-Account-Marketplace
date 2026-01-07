@@ -59,7 +59,7 @@ development_status:
   2-2-accountservice-business-logic: done
   2-3-graphql-schema-resolvers-accounts: done
   2-4-rest-controllers-seller-operations: done
-  2-5-frontend-graphql-queries-mutations: backlog
+  2-5-frontend-graphql-queries-mutations: done
   2-6-seller-account-listing-pages: backlog
   epic-2-retrospective: optional
 
