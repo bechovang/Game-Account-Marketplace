@@ -48,7 +48,7 @@ development_status:
   1-3-frontend-vite-react-typescript-setup: done
   1-4-user-entity-repository: done
   1-5-security-configuration-jwt-implementation: done
-  1-6-authservice-authentication-logic: review
+  1-6-authservice-authentication-logic: done
   1-7-authentication-rest-api-endpoints: review
   1-8-frontend-authentication-pages-context: review
   epic-1-retrospective: optional
