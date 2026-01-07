@@ -1,0 +1,299 @@
+Hướng dẫn Implement PayOS vào Project
+Giới thiệu PayOS
+PayOS là cổng thanh toán miễn phí sử dụng chính tài khoản ngân hàng của người dùng để xác nhận thanh toán. Đây là sản phẩm của Casso, hỗ trợ thanh toán chuyển khoản Napas 24/7 và tạo QR code động cho từng đơn hàng[1].
+Chuẩn bị trước khi tích hợp
+Trước khi bắt đầu implement, bạn cần:
+•	Tạo tài khoản tại https://my.payos.vn
+•	Xác thực doanh nghiệp hoặc cá nhân
+•	Lấy Client ID, API Key, và Checksum Key từ kênh thanh toán
+Chọn SDK phù hợp
+PayOS cung cấp SDKs cho các ngôn ngữ và framework phổ biến[2]:
+Ngôn ngữ	Package	Lệnh cài đặt
+Node.js	@payos/node	npm install @payos/node --save
+Python	payos	pip3 install payos
+PHP	payos/payos	composer require payos/payos
+.NET Core	payOS	dotnet add package payOS
+Java	payos-java	Maven/Gradle dependency
+Go	payos-lib-golang	go get github.com/payOSHQ/payos-lib-golang
+
+
+1. Cài đặt SDK theo Framework
+Node.js/Express
+npm install @payos/node --save
+Khởi tạo:
+import { PayOS } from '@payos/node';
+const payOS = new PayOS({
+clientId: process.env.PAYOS_CLIENT_ID,
+apiKey: process.env.PAYOS_API_KEY,
+checksumKey: process.env.PAYOS_CHECKSUM_KEY,
+});
+Python
+pip3 install payos
+Khởi tạo:
+from payos import PayOS
+import os
+client_id = os.environ.get('PAYOS_CLIENT_ID')
+api_key = os.environ.get('PAYOS_API_KEY')
+checksum_key = os.environ.get('PAYOS_CHECKSUM_KEY')
+payOS = PayOS(client_id=client_id, api_key=api_key, checksum_key=checksum_key)
+PHP/Laravel
+composer require payos/payos
+.NET Core
+dotnet add package payOS
+Khởi tạo:
+using Net.payOS;
+PayOS payOS = new PayOS(
+clientId: configuration["PAYOS_CLIENT_ID"],
+apiKey: configuration["PAYOS_API_KEY"],
+checksumKey: configuration["PAYOS_CHECKSUM_KEY"],
+partnerCode: configuration["PAYOS_PARTNER_CODE"]
+);
+Java
+Thêm Maven dependency:
+vn.payos payos-java {VERSION}
+Khởi tạo:
+import vn.payos.PayOS;
+PayOS payOS = new PayOS(clientId, apiKey, checksumKey);
+Quy trình tích hợp cơ bản
+Bước 1: Tạo Link Thanh toán
+Sau khi khách hàng chọn thanh toán, server của bạn gọi API tạo link thanh toán:
+Node.js
+const paymentData = {
+orderCode: 123456,
+amount: 50000,
+description: 'Thanh toán đơn hàng',
+items: [
+{
+name: 'Sản phẩm A',
+quantity: 1,
+price: 50000,
+},
+],
+cancelUrl: 'https://your-domain.com/cancel',
+returnUrl: 'https://your-domain.com/success',
+};
+const paymentLink = await payOS.paymentRequests.create(paymentData);
+console.log(paymentLink.checkoutUrl); // Chuyển hướng khách hàng đến URL này
+Python
+from payos import PayOS, ItemData, PaymentData
+item = ItemData(name="Mì tôm hảo hảo ly", quantity=1, price=1000)
+payment_data = PaymentData(
+order_code=1,
+amount=1000,
+description="Thanh toan don hang",
+items=[item],
+cancel_url="https://your-domain.com/cancel",
+return_url="https://your-domain.com/success"
+)
+result = payOS.create_payment_link(payment_data)
+print(result.checkout_url)
+Java
+import vn.payos.type.ItemData;
+import vn.payos.type.PaymentData;
+import vn.payos.type.CheckoutResponseData;
+ItemData itemData = ItemData.builder()
+.name("Mỳ tôm Hảo Hảo ly")
+.quantity(1)
+.price(2000)
+.build();
+PaymentData paymentData = new PaymentData(
+123456, // orderCode
+2000, // amount
+"Thanh toan", // description
+List.of(itemData),
+"https://your-domain.com/cancel",
+"https://your-domain.com/success"
+);
+CheckoutResponseData result = payOS.createPaymentLink(paymentData);
+System.out.println(result.getCheckoutUrl());
+Bước 2: Xử lý Return URL
+Sau khi thanh toán, khách hàng sẽ quay trở lại website của bạn qua returnUrl hoặc cancelUrl:
+Node.js
+app.get('/success', (req, res) => {
+// Khách hàng đã hoàn thành thanh toán
+// Hiển thị trang thành công
+res.render('success');
+});
+app.get('/cancel', (req, res) => {
+// Khách hàng đã hủy thanh toán
+res.render('cancel');
+});
+Bước 3: Xử lý Webhook
+PayOS sẽ gửi kết quả thanh toán đến webhook URL của bạn (được cấu hình tại https://my.payos.vn). Bạn cần xác thực và xử lý webhook:
+Node.js
+app.post('/webhook', async (req, res) => {
+try {
+const webhookBody = req.body;
+const webhookData = await payOS.verifyPaymentWebhookData(webhookBody);
+// Cập nhật trạng thái đơn hàng
+console.log('Thanh toán thành công cho đơn hàng:', webhookData.data.orderCode);
+
+res.json({ success: true });
+
+} catch (error) {
+console.error('Lỗi webhook:', error);
+res.status(400).json({ success: false });
+}
+});
+Python
+@app.route('/webhook', methods=['POST'])
+def webhook():
+try:
+webhook_body = request.get_json()
+webhook_data = payOS.verify_payment_webhook_data(webhook_body)
+# Cập nhật trạng thái đơn hàng
+print(f"Thanh toán thành công: {webhook_data.data.order_code}")
+
+return {"success": True}
+
+except Exception as e:
+print(f"Lỗi: {str(e)}")
+return {"success": False}, 400
+Java
+@PostMapping("/webhook")
+public Map<String, Object> handleWebhook(@RequestBody Map<String, Object> body) {
+try {
+WebhookData webhookData = payOS.verifyPaymentWebhookData(body);
+// Cập nhật trạng thái đơn hàng
+System.out.println("Thanh toán thành công: " + webhookData.getData().getOrderCode());
+
+return Map.of("success", true);
+
+} catch (Exception e) {
+System.err.println("Lỗi: " + e.getMessage());
+return Map.of("success", false);
+}
+}
+Lấy thông tin thanh toán
+Để lấy thông tin trạng thái thanh toán của một đơn hàng:
+Node.js
+const paymentInfo = await payOS.paymentRequests.get(orderCode);
+console.log(paymentInfo.status); // PENDING, PAID, EXPIRED, CANCELLED
+Python
+payment_info = payOS.get_payment_link_information(order_code)
+print(payment_info.status)
+Java
+PaymentLinkData paymentInfo = payOS.getPaymentLinkInformation(orderCode);
+System.out.println(paymentInfo.getStatus());
+Hủy link thanh toán
+Nếu cần hủy link thanh toán đã tạo:
+Node.js
+await payOS.paymentRequests.cancel(orderCode, 'Lý do hủy');
+Python
+payOS.cancel_payment_link(order_code, 'Lý do hủy')
+Java
+payOS.cancelPaymentLink(orderCode, "Lý do hủy");
+Cấu hình Webhook
+Bước 1: Xác thực Webhook URL
+Trước khi nhận webhook, bạn cần xác thực webhook URL:
+Node.js
+await payOS.paymentRequests.confirmWebhook('https://your-domain.com/webhook');
+Python
+payOS.confirm_webhook('https://your-domain.com/webhook')
+Bước 2: Cấu hình qua Dashboard
+1.	Truy cập https://my.payos.vn
+2.	Vào phần "Kênh thanh toán"
+3.	Cập nhật Webhook URL cho kênh
+Các cách tích hợp UI
+PayOS hỗ trợ 4 cách tích hợp giao diện[3]:
+Cách tích hợp	Ưu điểm	Nhược điểm
+Redirect	Ổn định, tích hợp nhanh (10 phút)	Ít linh hoạt
+Popup	Không rời khỏi trang web	Phức tạp hơn
+Custom UI	Linh hoạt cao nhất	Phức tạp nhất
+PayOS SDK UI	Cân bằng giữa linh hoạt và tính năng	Phụ thuộc vào SDK
+
+Sử dụng payOS-checkout.js
+Để xử lý sự kiện thanh toán từ front-end, sử dụng thư viện @payos/payos-checkout:
+// Cài đặt
+npm install @payos/payos-checkout
+// Sử dụng
+import { initPaymentCheckout } from '@payos/payos-checkout';
+const paymentLinkId = '...'; // Từ response tạo link
+initPaymentCheckout({
+paymentLinkId: paymentLinkId,
+onSuccess: (data) => {
+console.log('Thanh toán thành công:', data);
+},
+onError: (data) => {
+console.error('Lỗi thanh toán:', data);
+},
+onCancel: () => {
+console.log('Khách hàng hủy thanh toán');
+}
+});
+Ví dụ hoàn chỉnh (Node.js/Express)
+const express = require('express');
+const { PayOS } = require('@payos/node');
+require('dotenv').config();
+const app = express();
+app.use(express.json());
+const payOS = new PayOS({
+clientId: process.env.PAYOS_CLIENT_ID,
+apiKey: process.env.PAYOS_API_KEY,
+checksumKey: process.env.PAYOS_CHECKSUM_KEY,
+});
+// API tạo link thanh toán
+app.post('/api/payment/create', async (req, res) => {
+try {
+const { orderCode, amount, description, items } = req.body;
+const paymentData = {
+  orderCode: orderCode,
+  amount: amount,
+  description: description,
+  items: items,
+  cancelUrl: 'http://localhost:3000/cancel',
+  returnUrl: 'http://localhost:3000/success',
+};
+
+const result = await payOS.paymentRequests.create(paymentData);
+res.json({ success: true, checkoutUrl: result.checkoutUrl });
+
+} catch (error) {
+res.status(400).json({ success: false, error: error.message });
+}
+});
+// Xử lý webhook
+app.post('/webhook', async (req, res) => {
+try {
+const webhookData = await payOS.verifyPaymentWebhookData(req.body);
+// Cập nhật database
+console.log('Thanh toán thành công:', webhookData.data);
+
+res.json({ success: true });
+
+} catch (error) {
+res.status(400).json({ success: false });
+}
+});
+app.listen(3000, () => console.log('Server running on port 3000'));
+Lỗi thường gặp và cách khắc phục
+Lỗi	Nguyên nhân	Cách khắc phục
+Invalid credentials	Client ID, API Key, Checksum Key sai	Kiểm tra lại giá trị từ https://my.payos.vn
+
+Webhook verification failed	Checksum Key không đúng	Xác nhận Checksum Key khớp giữa tạo link và xác minh webhook
+Webhook not received	Webhook URL chưa được xác thực	Gọi confirmWebhook() trước
+Order code already exists	Reuse order code	Sử dụng order code duy nhất cho mỗi giao dịch
+
+Tài liệu tham khảo
+•	Tài liệu chính thức: https://payos.vn/docs/
+•	Mã nguồn mẫu: https://payos.vn/docs/sample/
+•	API Reference: https://payos.vn/docs/api/
+•	SDK Node.js: https://payos.vn/docs/sdks/back-end/node/
+•	SDK Python: https://payos.vn/docs/sdks/back-end/python/
+•	SDK Java: https://payos.vn/docs/sdks/back-end/java/
+Chương trình Affiliate
+PayOS cung cấp chương trình "Đối tác tích hợp" cho các lập trình viên tích hợp PayOS vào Web/App của khách hàng[1]. Chi tiết: https://payos.vn/docs/
+Kết luận
+Implement PayOS vào project của bạn khá đơn giản với các bước:
+1.	Tạo account tại my.payos.vn
+2.	Cài đặt SDK phù hợp
+3.	Khởi tạo PayOS object với credentials
+4.	Tạo link thanh toán khi khách hàng thanh toán
+5.	Xử lý webhook để cập nhật trạng thái đơn hàng
+6.	(Tuỳ chọn) Cấu hình custom UI nếu cần
+Thời gian tích hợp cơ bản chỉ khoảng 10 phút với bất kỳ framework nào[3].
+________________________________________
+Tham chiếu:
+[1] PayOS. (2025). Cổng thanh toán miễn phí PayOS. Retrieved from https://payos.vn
+[2] PayOS. (2025). SDKs. Retrieved from https://payos.vn/docs/sdks/intro/
+[3] PayOS. (2025). Bắt đầu | payOS. Retrieved from https://payos.vn/docs/

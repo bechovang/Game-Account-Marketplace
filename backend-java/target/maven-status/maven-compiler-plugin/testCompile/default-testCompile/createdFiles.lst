@@ -1,0 +1,7 @@
+com\gameaccount\marketplace\service\AccountServiceTest.class
+com\gameaccount\marketplace\controller\AccountControllerSecurityTest.class
+com\gameaccount\marketplace\graphql\mutation\AccountMutationTest.class
+com\gameaccount\marketplace\graphql\query\GameQueryTest.class
+com\gameaccount\marketplace\service\GameServiceTest.class
+com\gameaccount\marketplace\controller\AccountControllerTest.class
+com\gameaccount\marketplace\graphql\query\AccountQueryTest.class

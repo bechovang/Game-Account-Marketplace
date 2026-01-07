@@ -1,0 +1,126 @@
+# Sprint Status Tracking
+# generated: 2026-01-06
+# project: fcode project
+# project_key: game-account-marketplace
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-01-06
+project: fcode project
+project_key: game-account-marketplace
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: User Authentication & Identity (8 stories)
+  epic-1: in-progress
+  1-1-project-structure-environment-setup: review
+  1-2-backend-spring-boot-skeleton: review
+  1-3-frontend-vite-react-typescript-setup: review
+  1-4-user-entity-repository: review
+  1-5-security-configuration-jwt-implementation: review
+  1-6-authservice-authentication-logic: review
+  1-7-authentication-rest-api-endpoints: review
+  1-8-frontend-authentication-pages-context: review
+  epic-1-retrospective: optional
+
+  # Epic 2: Account Listing Management (6 stories)
+  epic-2: in-progress
+  2-1-game-account-entities-repositories: done
+  2-2-accountservice-business-logic: done
+  2-3-graphql-schema-resolvers-accounts: done
+  2-4-rest-controllers-seller-operations: in-progress
+  2-5-frontend-graphql-queries-mutations: backlog
+  2-6-seller-account-listing-pages: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Marketplace Discovery (10 stories)
+  epic-3: backlog
+  3-1-advanced-filtering-search-implementation: backlog
+  3-2-favorites-wishlist-feature: backlog
+  3-3-favorites-rest-api-graphql-integration: backlog
+  3-4-account-detail-page-related-data: backlog
+  3-5-marketplace-homepage-featured-listings: backlog
+  3-6-advanced-search-filter-ui: backlog
+  3-7-favorites-management-page: backlog
+  3-8-redis-caching-strategy-implementation: backlog
+  3-9-dataloader-n-plus-1-query-prevention: backlog
+  3-10-pagination-infinite-scroll: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Secure Transactions (8 stories)
+  epic-4: backlog
+  4-1-transaction-review-entities: backlog
+  4-2-transactionservice-encryption: backlog
+  4-3-payment-gateway-vnpay-integration: backlog
+  4-4-payment-gateway-momo-integration: backlog
+  4-5-transaction-rest-api: backlog
+  4-6-purchase-flow-payment-ui: backlog
+  4-7-review-system-backend: backlog
+  4-8-review-ui-components: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Real-time Communication (8 stories)
+  epic-5: backlog
+  5-1-message-entity-repository: backlog
+  5-2-websocket-stomp-configuration: backlog
+  5-3-chatservice-message-handlers: backlog
+  5-4-notificationservice-broadcasts: backlog
+  5-5-frontend-websocket-client-setup: backlog
+  5-6-chat-ui-components: backlog
+  5-7-notification-components: backlog
+  5-8-real-time-account-updates: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Reviews & Reputation (6 stories)
+  epic-6: backlog
+  6-1-reviewsystem-backend-enhancement: backlog
+  6-2-review-graphql-api: backlog
+  6-3-review-rest-api-enhancement: backlog
+  6-4-star-rating-component: backlog
+  6-5-review-form-display: backlog
+  6-6-review-management-page: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Platform Administration (10 stories)
+  epic-7: backlog
+  7-1-admin-role-security-setup: backlog
+  7-2-admin-statistics-queries: backlog
+  7-3-admin-rest-api-endpoints: backlog
+  7-4-account-approval-workflow: backlog
+  7-5-user-management-backend: backlog
+  7-6-admin-dashboard-ui: backlog
+  7-7-account-approval-interface: backlog
+  7-8-user-management-ui: backlog
+  7-9-reports-export: backlog
+  7-10-platform-health-monitoring: backlog
+  epic-7-retrospective: optional

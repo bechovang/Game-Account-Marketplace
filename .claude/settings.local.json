@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Skill(bmad:bmm:workflows:check-implementation-readiness)",
+      "Skill(bmad:bmm:workflows:sprint-planning)",
+      "Skill(bmad:bmm:workflows:create-story)",
+      "Skill(bmad:bmm:workflows:dev-story)",
+      "Bash(docker:*)",
+      "Bash(cat:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(java:*)",
+      "Bash(where:*)",
+      "Bash(set:*)",
+      "Bash(npm create vite:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout:*)",
+      "Bash(mvn compile:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run build)",
+      "Bash(docker-compose:*)",
+      "Bash(netstat:*)",
+      "Bash(mysql:*)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(mvn test:*)",
+      "Skill(bmad:bmm:workflows:code-review)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(del:*)",
+      "Bash(del backend-javanul)"
+    ]
+  }
+}
