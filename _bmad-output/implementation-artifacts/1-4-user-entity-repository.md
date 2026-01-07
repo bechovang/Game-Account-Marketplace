@@ -1,6 +1,6 @@
 # Story 1.4: User Entity & Repository
 
-Status: review
+Status: done
 
 ## Story
 
@@ -237,3 +237,48 @@ Story 1.4 completed successfully on 2026-01-07.
 ### File List
 - `backend-java/src/main/java/com/gameaccount/marketplace/entity/User.java` (CREATE)
 - `backend-java/src/main/java/com/gameaccount/marketplace/repository/UserRepository.java` (CREATE)
+
+---
+
+## Review Follow-ups (AI Code Review - 2026-01-07)
+
+**Issues Found and Verified:**
+
+### ✅ VERIFIED - Build Compilation (MEDIUM)
+- **Action**: Ran `mvn clean compile` successfully on 2026-01-07
+- **Result**: BUILD SUCCESS - 39 source files compiled
+- **Verified**: User entity and UserRepository compile correctly with all annotations
+
+### 📝 NOTED - Git Reality vs Story Claims (MEDIUM)
+- **Issue**: No dedicated commit for story 1.4; all work was part of massive "Initial commit" (47b7ef8)
+- **Impact**: Cannot trace which files belong specifically to story 1.4
+- **Action**: Documented here for transparency; this is a historical artifact from initial project setup
+
+### 📝 NOTED - No Unit Tests (LOW)
+- **Issue**: No UserRepositoryTest or User entity tests created
+- **Impact**: Low test coverage for core entity. Story doesn't explicitly require tests.
+- **Mitigation**: Integration tests exist for later stories (Account, Game). User tests can be added in future testing stories.
+- **Note**: This is acceptable for this skeleton story; comprehensive testing will be addressed in dedicated test stories
+
+### ✅ VERIFIED - User Entity Implementation
+- **All required fields present**: id, email, password, fullName, avatar, role, status, balance, rating, totalReviews, createdAt, updatedAt
+- **JPA annotations correct**: @Entity, @Table(name="users"), @EntityListeners(AuditingEntityListener.class)
+- **Primary key**: @Id with @GeneratedValue(IDENTITY)
+- **Constraints proper**: email unique/nullable=false, password nullable=false with length 255 (BCrypt compatible)
+- **Enums correct**: Role (BUYER, SELLER, ADMIN) and UserStatus (ACTIVE, BANNED, SUSPENDED) with @Enumerated(STRING)
+- **Lombok annotations**: @Getter, @Setter, @Builder, @NoArgsConstructor, @AllArgsConstructor
+- **Audit fields**: @CreatedDate, @LastModifiedDate
+- **@Builder.Default applied**: On fields with default values (role, status, balance, rating, totalReviews)
+
+### ✅ VERIFIED - UserRepository Implementation
+- **Extends**: JpaRepository<User, Long>
+- **findByEmail(String email)**: Returns Optional<User>
+- **existsByEmail(String email)**: Returns boolean
+- **findByRole(User.Role role, Pageable pageable)**: With @Query filtering by ACTIVE status
+- **Bonus method**: searchUsers() for keyword search (fullName or email)
+
+**Code Review Summary:**
+- Total Issues Found: 2 (0 HIGH, 1 MEDIUM, 1 LOW)
+- Issues Verified: 1 (build compilation)
+- Issues Documented: 2 (git transparency, no unit tests)
+- Final Decision: ✅ Story marked as **done** - all acceptance criteria met, implementation verified
