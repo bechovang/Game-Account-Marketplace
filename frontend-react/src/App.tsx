@@ -11,6 +11,7 @@ import HomePage from './pages/HomePage';
 import CreateListingPage from './pages/CreateListingPage';
 import EditListingPage from './pages/EditListingPage';
 import MyListingsPage from './pages/MyListingsPage';
+import AccountDetailPage from './pages/account/AccountDetailPage';
 
 function App() {
   return (
@@ -55,6 +56,16 @@ function App() {
                 <SellerRoute>
                   <MyListingsPage />
                 </SellerRoute>
+              }
+            />
+
+            {/* Account Detail Page */}
+            <Route
+              path="/accounts/:accountId"
+              element={
+                <ProtectedRoute>
+                  <AccountDetailPage />
+                </ProtectedRoute>
               }
             />
 

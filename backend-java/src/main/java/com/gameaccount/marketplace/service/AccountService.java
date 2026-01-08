@@ -1,5 +1,6 @@
 package com.gameaccount.marketplace.service;
 
+import com.gameaccount.marketplace.dto.request.AccountSearchRequest;
 import com.gameaccount.marketplace.dto.request.CreateAccountRequest;
 import com.gameaccount.marketplace.dto.request.UpdateAccountRequest;
 import com.gameaccount.marketplace.entity.Account;
@@ -11,15 +12,23 @@ import com.gameaccount.marketplace.exception.ResourceNotFoundException;
 import com.gameaccount.marketplace.repository.AccountRepository;
 import com.gameaccount.marketplace.repository.GameRepository;
 import com.gameaccount.marketplace.repository.UserRepository;
+import com.gameaccount.marketplace.spec.AccountSpecification;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Service layer for account listing management.
@@ -34,6 +43,9 @@ public class AccountService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
 
+    /** Allowed sort fields for account search */
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("price", "level", "createdAt");
+
     /**
      * Create a new account listing
      *
@@ -42,6 +54,7 @@ public class AccountService {
      * @return Created account entity
      * @throws ResourceNotFoundException if seller or game not found
      */
+    @CacheEvict(value = "accounts", allEntries = true)
     @Transactional
     public Account createAccount(@Valid CreateAccountRequest request, Long sellerId) {
         log.info("Creating account for sellerId: {}, gameId: {}, title: {}", sellerId, request.getGameId(), request.getTitle());
@@ -84,6 +97,7 @@ public class AccountService {
      * @throws ResourceNotFoundException if account not found
      * @throws BusinessException if user is not the owner
      */
+    @CacheEvict(value = "accounts", allEntries = true)
     @Transactional
     public Account updateAccount(Long accountId, @Valid UpdateAccountRequest request, Long authenticatedUserId) {
         log.info("Updating account id: {} by userId: {}", accountId, authenticatedUserId);
@@ -120,6 +134,7 @@ public class AccountService {
      * @throws ResourceNotFoundException if account not found
      * @throws BusinessException if user is not owner or admin
      */
+    @CacheEvict(value = "accounts", allEntries = true)
     @Transactional
     public void deleteAccount(Long accountId, Long authenticatedUserId, boolean isAdmin) {
         log.info("Deleting account id: {} by userId: {}, isAdmin: {}", accountId, authenticatedUserId, isAdmin);
@@ -161,6 +176,51 @@ public class AccountService {
     }
 
     /**
+     * Get account by ID WITHOUT incrementing view count.
+     * This is used by the GraphQL query which delegates view count incrementing
+     * to the separate PATCH /api/accounts/{id}/view endpoint.
+     *
+     * @param accountId ID of account to retrieve
+     * @return Account entity WITHOUT incrementing views
+     * @throws ResourceNotFoundException if account not found
+     */
+    @Transactional(readOnly = true)
+    public Account getAccountByIdWithoutIncrement(Long accountId) {
+        log.debug("Fetching account id: {} (without incrementing views)", accountId);
+
+        return accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+    }
+
+    /**
+     * Increment account view count asynchronously (fire-and-forget).
+     * This method is called from the PATCH /api/accounts/{id}/view endpoint.
+     * Uses @Async to prevent blocking the response and @CacheEvict to clear cached data.
+     *
+     * @param accountId ID of account to increment
+     */
+    @Async
+    @CacheEvict(value = "accounts", key = "#accountId")
+    public CompletableFuture<Void> incrementViewCountAsync(Long accountId) {
+        log.debug("Async increment view count for account id: {}", accountId);
+
+        try {
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+
+            account.setViewsCount(account.getViewsCount() + 1);
+            accountRepository.save(account);
+
+            log.debug("View count incremented asynchronously for account id: {}, new count: {}",
+                    accountId, account.getViewsCount());
+        } catch (Exception e) {
+            log.error("Failed to increment view count for account id: {}", accountId, e);
+        }
+
+        return CompletableFuture.completedFuture(null);
+    }
+
+    /**
      * Approve a pending account (ADMIN only)
      *
      * @param accountId ID of account to approve
@@ -168,6 +228,7 @@ public class AccountService {
      * @throws ResourceNotFoundException if account not found
      * @throws BusinessException if account is not in PENDING status
      */
+    @CacheEvict(value = "accounts", allEntries = true)
     @PreAuthorize("hasRole('ADMIN')")
     public Account approveAccount(Long accountId) {
         log.info("Approving account id: {}", accountId);
@@ -196,6 +257,7 @@ public class AccountService {
      * @throws ResourceNotFoundException if account not found
      * @throws BusinessException if account is not in PENDING status
      */
+    @CacheEvict(value = "accounts", allEntries = true)
     @PreAuthorize("hasRole('ADMIN')")
     public Account rejectAccount(Long accountId, String reason) {
         log.info("Rejecting account id: {}, reason: {}", accountId, reason);
@@ -237,6 +299,102 @@ public class AccountService {
         Page<Account> results = accountRepository.searchAccounts(gameId, minPrice, maxPrice, status, pageable);
 
         log.debug("Found {} accounts matching search criteria", results.getTotalElements());
+        return results;
+    }
+
+    /**
+     * Search accounts with advanced filters, role-based access control, and caching.
+     * Supports filtering by game, price range, level range, rank, status, featured flag,
+     * full-text search, and sorting options.
+     *
+     * Role-based filtering rules:
+     * - ADMIN: Sees all statuses (respects requested status filter)
+     * - SELLER: Sees APPROVED accounts + their own PENDING accounts
+     * - BUYER/PUBLIC: Only sees APPROVED accounts
+     *
+     * @param searchRequest Search parameters object containing all filters
+     * @param authenticatedUserId ID of authenticated user (for role-based filtering)
+     * @param userRole Role of authenticated user (BUYER, SELLER, ADMIN)
+     * @param pageable Pagination parameters
+     * @return Page of matching accounts
+     */
+    @Cacheable(value = "accounts",
+            key = "#searchRequest.gameId + '-' + #searchRequest.minPrice + '-' + #searchRequest.maxPrice + " +
+                  "'-' + #searchRequest.minLevel + '-' + #searchRequest.maxLevel + '-' + #searchRequest.rank + " +
+                  "'-' + #searchRequest.status + '-' + #searchRequest.isFeatured + '-' + #searchRequest.searchText + " +
+                  "'-' + #searchRequest.sortBy + '-' + #searchRequest.sortDirection + " +
+                  "'-' + #searchRequest.sellerId + " +
+                  "'-' + #pageable.pageNumber + '-' + #pageable.pageSize + " +
+                  "'-' + #userRole")
+    @Transactional(readOnly = true)
+    public Page<Account> searchAccounts(
+            AccountSearchRequest searchRequest,
+            Long authenticatedUserId,
+            String userRole,
+            Pageable pageable) {
+
+        log.debug("Advanced search - userRole: {}, filters: {}", userRole, searchRequest);
+
+        // Determine effective status filter based on user role
+        AccountStatus effectiveStatus = searchRequest.getStatus();
+
+        if ("ADMIN".equals(userRole)) {
+            // Admins see all statuses (respect requested status filter)
+            effectiveStatus = searchRequest.getStatus();
+        } else if ("SELLER".equals(userRole)) {
+            // Sellers see APPROVED accounts + their own PENDING accounts
+            // If searching for own listings, don't force status filter
+            // Otherwise, only show APPROVED
+            if (searchRequest.getSellerId() == null || !searchRequest.getSellerId().equals(authenticatedUserId)) {
+                effectiveStatus = AccountStatus.APPROVED;
+            }
+        } else {
+            // Buyers and public users only see APPROVED accounts
+            effectiveStatus = AccountStatus.APPROVED;
+        }
+
+        // Build specification with role-appropriate status filter
+        var spec = AccountSpecification.buildSearchSpecification(
+            searchRequest.getGameId(),
+            searchRequest.getMinPrice(),
+            searchRequest.getMaxPrice(),
+            searchRequest.getMinLevel(),
+            searchRequest.getMaxLevel(),
+            searchRequest.getRank(),
+            effectiveStatus,
+            searchRequest.getIsFeatured(),
+            searchRequest.getSearchText(),
+            searchRequest.getSellerId()
+        );
+
+        // Apply sorting if specified
+        Pageable sortedPageable = pageable;
+        if (searchRequest.getSortBy() != null && !searchRequest.getSortBy().trim().isEmpty()) {
+            // Validate sortBy against allowed fields
+            if (!ALLOWED_SORT_FIELDS.contains(searchRequest.getSortBy())) {
+                log.warn("Invalid sortBy field requested: {}, ignoring and using default sorting", searchRequest.getSortBy());
+                sortedPageable = pageable;
+            } else {
+                // Determine sort direction
+                Sort.Direction direction = Sort.Direction.ASC; // Default for price
+                if (searchRequest.getSortDirection() == AccountSearchRequest.SortDirection.DESC) {
+                    direction = Sort.Direction.DESC;
+                } else if (searchRequest.getSortDirection() == null) {
+                    // Apply sensible defaults: level and createdAt default to DESC
+                    if ("level".equals(searchRequest.getSortBy()) || "createdAt".equals(searchRequest.getSortBy())) {
+                        direction = Sort.Direction.DESC;
+                    }
+                }
+
+                Sort sort = Sort.by(direction, searchRequest.getSortBy());
+                sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+            }
+        }
+
+        Page<Account> results = accountRepository.findAll(spec, sortedPageable);
+
+        log.debug("Advanced search found {} accounts matching criteria (effectiveStatus: {})",
+                results.getTotalElements(), effectiveStatus);
         return results;
     }
 

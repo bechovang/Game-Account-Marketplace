@@ -1,6 +1,6 @@
 # Story 1.8: Frontend Authentication Pages & Context
 
-Status: review
+Status: done
 
 ## Story
 
@@ -534,12 +534,34 @@ Story 1.8 completed successfully on 2026-01-07.
 
 **All acceptance criteria met.**
 
+### Code Review Fixes (2026-01-08)
+The following issues were identified and fixed during code review:
+
+**Critical Fixes:**
+1. **User profile fetch on mount**: Added `fetchUserProfile()` function to fetch user data from `/api/users/me` when token exists in localStorage on page load
+2. **fullName bug**: Fixed login response to include `fullName` from API instead of empty string
+3. **Token key consistency**: Standardized localStorage key to only use `access_token` (removed `auth_token` confusion in apolloClient)
+4. **isLoading race condition**: Fixed useEffect to properly wait for user profile fetch before setting isLoading=false
+5. **Dead code**: Removed unused `useNavigate` import from RegisterPage
+6. **Type safety**: Improved error handling with proper type guards instead of `any`
+7. **apiClient.get**: Added GET method to apiClient for fetching user profile
+
+**Files Modified During Review:**
+- `frontend-react/src/contexts/AuthContext.tsx` (MODIFY - fetchUserProfile, LoginResponse interface)
+- `frontend-react/src/services/rest/axiosInstance.ts` (MODIFY - added get method)
+- `frontend-react/src/lib/apolloClient.ts` (MODIFY - standardized token key)
+- `frontend-react/src/pages/RegisterPage.tsx` (MODIFY - removed unused import)
+- `frontend-react/src/pages/LoginPage.tsx` (MODIFY - type-safe error handling)
+
 ### File List
+**Note:** Files were created in previous commits. This story's git changes include:
+- `frontend-react/src/lib/apolloClient.ts` (MODIFY - standardized token handling)
+
+**Files Created (not in this git commit, but part of story deliverables):**
 - `frontend-react/src/contexts/AuthContext.tsx` (CREATE)
 - `frontend-react/src/services/rest/axiosInstance.ts` (CREATE)
 - `frontend-react/src/components/common/ProtectedRoute.tsx` (CREATE)
 - `frontend-react/src/pages/LoginPage.tsx` (CREATE)
 - `frontend-react/src/pages/RegisterPage.tsx` (CREATE)
 - `frontend-react/src/pages/HomePage.tsx` (CREATE)
-- `frontend-react/src/lib/apolloClient.ts` (CREATE)
 - `frontend-react/src/App.tsx` (MODIFY - added Router, ApolloProvider, AuthProvider)

@@ -79,6 +79,7 @@ export const GET_ACCOUNT = gql`
       status
       viewsCount
       isFeatured
+      isFavorited
       images
       createdAt
       updatedAt

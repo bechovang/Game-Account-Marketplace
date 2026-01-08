@@ -39,4 +39,6 @@ export default axiosInstance;
 export const apiClient = {
   post: <T>(url: string, data: object) =>
     axiosInstance.post<T>(url, data).then((res) => res.data),
+  get: <T>(url: string) =>
+    axiosInstance.get<T>(url).then((res) => res.data),
 };

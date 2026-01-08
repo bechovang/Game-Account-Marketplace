@@ -79,6 +79,57 @@ export const DELETE_ACCOUNT = gql`
   }
 `;
 
+// ==================== Favorites Mutations ====================
+
+/**
+ * ADD_TO_FAVORITES - Add an account to user's favorites
+ * @param accountId - Account ID to add to favorites
+ * Requires authentication
+ */
+export const ADD_TO_FAVORITES = gql`
+  mutation AddToFavorites($accountId: ID!) {
+    addToFavorites(accountId: $accountId) {
+      id
+      title
+      description
+      level
+      rank
+      price
+      status
+      viewsCount
+      isFeatured
+      isFavorited
+      images
+      createdAt
+      updatedAt
+      seller {
+        id
+        fullName
+        avatar
+        rating
+        totalReviews
+      }
+      game {
+        id
+        name
+        slug
+      }
+    }
+  }
+`;
+
+/**
+ * REMOVE_FROM_FAVORITES - Remove an account from user's favorites
+ * @param accountId - Account ID to remove from favorites
+ * Requires authentication
+ * Returns true if successful
+ */
+export const REMOVE_FROM_FAVORITES = gql`
+  mutation RemoveFromFavorites($accountId: ID!) {
+    removeFromFavorites(accountId: $accountId)
+  }
+`;
+
 // ==================== Admin Mutations ====================
 
 /**

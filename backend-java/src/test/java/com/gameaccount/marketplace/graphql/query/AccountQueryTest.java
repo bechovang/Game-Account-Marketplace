@@ -167,7 +167,7 @@ class AccountQueryTest {
     void account_WithValidId_ReturnsAccount() {
         // Given
         Long accountId = 1L;
-        when(accountService.getAccountById(accountId)).thenReturn(testAccount);
+        when(accountService.getAccountByIdWithoutIncrement(accountId)).thenReturn(testAccount);
 
         // When
         Account result = accountQuery.account(accountId);
@@ -177,7 +177,7 @@ class AccountQueryTest {
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getTitle()).isEqualTo("Test Account");
 
-        verify(accountService).getAccountById(accountId);
+        verify(accountService).getAccountByIdWithoutIncrement(accountId);
     }
 
     @Test

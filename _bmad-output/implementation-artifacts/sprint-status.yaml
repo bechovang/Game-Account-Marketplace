@@ -50,7 +50,7 @@ development_status:
   1-5-security-configuration-jwt-implementation: done
   1-6-authservice-authentication-logic: done
   1-7-authentication-rest-api-endpoints: done
-  1-8-frontend-authentication-pages-context: review
+  1-8-frontend-authentication-pages-context: done
   epic-1-retrospective: optional
 
   # Epic 2: Account Listing Management (6 stories)
@@ -64,11 +64,11 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3: Marketplace Discovery (10 stories)
-  epic-3: backlog
-  3-1-advanced-filtering-search-implementation: backlog
-  3-2-favorites-wishlist-feature: backlog
-  3-3-favorites-rest-api-graphql-integration: backlog
-  3-4-account-detail-page-related-data: backlog
+  epic-3: in-progress
+  3-1-advanced-filtering-search-implementation: done
+  3-2-favorites-wishlist-feature: done
+  3-3-favorites-rest-api-graphql-integration: done
+  3-4-account-detail-page-related-data: done
   3-5-marketplace-homepage-featured-listings: backlog
   3-6-advanced-search-filter-ui: backlog
   3-7-favorites-management-page: backlog

@@ -17,7 +17,11 @@ import java.util.List;
         @Index(name = "idx_account_game", columnList = "game_id"),
         @Index(name = "idx_account_status", columnList = "status"),
         @Index(name = "idx_account_price", columnList = "price"),
-        @Index(name = "idx_account_featured", columnList = "is_featured")
+        @Index(name = "idx_account_featured", columnList = "is_featured"),
+        @Index(name = "idx_account_level", columnList = "level"),
+        @Index(name = "idx_account_created_at", columnList = "created_at"),
+        @Index(name = "idx_account_status_featured", columnList = "status, is_featured"),
+        @Index(name = "idx_account_title", columnList = "title")
     }
 )
 @EntityListeners(AuditingEntityListener.class)

@@ -64,6 +64,7 @@ type Account {
     status: AccountStatus!
     viewsCount: Int!
     isFeatured: Boolean!
+    isFavorited: Boolean!
     images: [String!]!
     createdAt: String!
     updatedAt: String!
@@ -146,6 +147,18 @@ type Query {
     Get a game by slug
     """
     gameBySlug(slug: String!): Game!
+
+    # Favorites queries
+    """
+    Get user's favorite accounts with pagination
+    Requires authentication
+    - page: Page number (0-indexed, default 0)
+    - limit: Number of results per page (default 20)
+    """
+    favorites(
+        page: Int
+        limit: Int
+    ): [Account!]!
 }
 
 # ================================
@@ -185,4 +198,18 @@ type Mutation {
     Requires ADMIN role
     """
     rejectAccount(id: ID!, reason: String): Account!
+
+    # Favorites mutations
+    """
+    Add an account to user's favorites
+    Requires authentication
+    """
+    addToFavorites(accountId: ID!): Account!
+
+    """
+    Remove an account from user's favorites
+    Requires authentication
+    Returns true if successful
+    """
+    removeFromFavorites(accountId: ID!): Boolean!
 }
