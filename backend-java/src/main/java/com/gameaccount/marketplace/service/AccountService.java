@@ -47,6 +47,16 @@ public class AccountService {
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("price", "level", "createdAt");
 
     /**
+     * Get allowed sort fields for account search.
+     * Used by GraphQL query resolver to validate sort parameters.
+     *
+     * @return Set of allowed field names
+     */
+    public Set<String> getAllowedSortFields() {
+        return ALLOWED_SORT_FIELDS;
+    }
+
+    /**
      * Create a new account listing
      *
      * @param request Account creation data

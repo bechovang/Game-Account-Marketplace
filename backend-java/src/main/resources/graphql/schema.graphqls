@@ -114,6 +114,9 @@ type Query {
     - minPrice: Minimum price filter
     - maxPrice: Maximum price filter
     - status: Filter by account status
+    - isFeatured: Filter to show only featured accounts
+    - sortBy: Sort field (price, level, createdAt)
+    - sortDirection: Sort direction (ASC, DESC)
     - page: Page number (0-indexed, default 0)
     - limit: Number of results per page (default 20, max 100)
     """
@@ -122,6 +125,9 @@ type Query {
         minPrice: Float
         maxPrice: Float
         status: AccountStatus
+        isFeatured: Boolean
+        sortBy: String
+        sortDirection: String
         page: Int
         limit: Int
     ): PaginatedAccounts!

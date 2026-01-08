@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:gameaccount_marketplace}?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
+    username: ${DB_USERNAME:appuser}
+    password: ${DB_PASSWORD:apppassword}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:

@@ -3,5 +3,8 @@ C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\
 C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\java\com\gameaccount\marketplace\controller\AccountControllerTest.java
 C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\java\com\gameaccount\marketplace\controller\AccountControllerSecurityTest.java
 C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\java\com\gameaccount\marketplace\graphql\query\AccountQueryTest.java
+C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\java\com\gameaccount\marketplace\service\AccountServiceAdvancedSearchTest.java
+C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\java\com\gameaccount\marketplace\controller\FavoriteControllerTest.java
 C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\java\com\gameaccount\marketplace\graphql\mutation\AccountMutationTest.java
 C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\java\com\gameaccount\marketplace\service\AccountServiceTest.java
+C:\Users\Admin\Desktop\GIT CLONE\Game-Account-Marketplace\backend-java\src\test\java\com\gameaccount\marketplace\service\FavoriteServiceTest.java

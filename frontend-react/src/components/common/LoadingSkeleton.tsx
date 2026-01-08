@@ -1,10 +1,46 @@
 import React from 'react';
 
 interface LoadingSkeletonProps {
-  type?: 'card' | 'list' | 'detail';
+  type?: 'card' | 'list' | 'detail' | 'grid';
+  count?: number;
 }
 
-const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'detail' }) => {
+const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'detail', count = 6 }) => {
+  if (type === 'grid') {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse" role="status" aria-label="Loading">
+        {Array.from({ length: count }).map((_, index) => (
+          <div
+            key={index}
+            className="bg-white rounded-lg shadow-md p-4"
+            aria-hidden="true"
+          >
+            {/* Image placeholder */}
+            <div className="w-full h-48 bg-gray-200 rounded-lg mb-4"></div>
+
+            {/* Title placeholder */}
+            <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+
+            {/* Game/Level placeholder */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+            </div>
+
+            {/* Price placeholder */}
+            <div className="h-5 bg-gray-200 rounded w-1/4 mb-4"></div>
+
+            {/* Seller info placeholder */}
+            <div className="flex items-center justify-between">
+              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (type === 'detail') {
     return (
       <div className="container mx-auto px-4 py-8 animate-pulse">

@@ -33,7 +33,18 @@
       "Bash(git branch:*)",
       "Bash(git remote add:*)",
       "Bash(git push:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Skill(bmad:bmm:workflows:sprint-status)",
+      "Bash(npx tsc:*)",
+      "Skill(bmad:bmm:workflows:retrospective)",
+      "Bash(if not exist \"C:\\\\Users\\\\Admin\\\\Desktop\\\\GIT CLONE\\\\Game-Account-Marketplace\\\\backend-java\\\\src\\\\test\\\\java\\\\com\\\\gameaccount\\\\marketplace\\\\service\" mkdir \"C:\\\\Users\\\\Admin\\\\Desktop\\\\GIT CLONE\\\\Game-Account-Marketplace\\\\backend-java\\\\src\\\\test\\\\java\\\\com\\\\gameaccount\\\\marketplace\\\\service\")",
+      "Bash(mvn clean test:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev)",
+      "Bash(taskkill:*)",
+      "Bash(git -C \"C:\\\\Users\\\\Admin\\\\Desktop\\\\GIT CLONE\\\\Game-Account-Marketplace\" status --porcelain)",
+      "Bash(git -C \"C:\\\\Users\\\\Admin\\\\Desktop\\\\GIT CLONE\\\\Game-Account-Marketplace\" diff --name-only)",
+      "Bash(git -C:*)"
     ]
   }
 }

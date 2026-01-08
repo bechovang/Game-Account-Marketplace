@@ -1,13 +1,67 @@
 import { gql } from '@apollo/client';
 
+// ==================== Favorites Queries ====================
+
+/**
+ * GET_FAVORITES - Get current user's favorite accounts
+ * @param page - Page number, 0-indexed (optional, default 0)
+ * @param limit - Results per page (optional, default 20)
+ * @param sortBy - Sort field (optional, default 'createdAt')
+ * @param sortDirection - Sort direction (optional, default 'DESC' for newest first)
+ * Requires authentication
+ *
+ * AC #1: FavoritesPage sorts by createdAt descending (newest first)
+ */
+export const GET_FAVORITES = gql`
+  query GetFavorites($page: Int, $limit: Int, $sortBy: String, $sortDirection: String) {
+    favorites(page: $page, limit: $limit, sortBy: $sortBy, sortDirection: $sortDirection) {
+      content {
+        id
+        title
+        description
+        level
+        rank
+        price
+        status
+        viewsCount
+        isFeatured
+        isFavorited
+        images
+        createdAt
+        updatedAt
+        seller {
+          id
+          fullName
+          avatar
+          rating
+          totalReviews
+        }
+        game {
+          id
+          name
+          slug
+          iconUrl
+        }
+      }
+      totalElements
+      totalPages
+      currentPage
+      pageSize
+    }
+  }
+`;
+
 // ==================== Account Queries ====================
 
 /**
- * GET_ACCOUNTS - Query accounts with filters and pagination
+ * GET_ACCOUNTS - Query accounts with filters, sorting, and pagination
  * @param gameId - Filter by game ID (optional)
  * @param minPrice - Minimum price filter (optional)
  * @param maxPrice - Maximum price filter (optional)
  * @param status - Filter by account status (optional)
+ * @param isFeatured - Filter to show only featured accounts (optional)
+ * @param sortBy - Sort field: price, level, createdAt (optional, default createdAt)
+ * @param sortDirection - Sort direction: ASC, DESC (optional, default DESC)
  * @param page - Page number, 0-indexed (optional, default 0)
  * @param limit - Results per page (optional, default 20, max 100)
  */
@@ -17,6 +71,9 @@ export const GET_ACCOUNTS = gql`
     $minPrice: Float
     $maxPrice: Float
     $status: AccountStatus
+    $isFeatured: Boolean
+    $sortBy: String
+    $sortDirection: String
     $page: Int
     $limit: Int
   ) {
@@ -25,6 +82,9 @@ export const GET_ACCOUNTS = gql`
       minPrice: $minPrice
       maxPrice: $maxPrice
       status: $status
+      isFeatured: $isFeatured
+      sortBy: $sortBy
+      sortDirection: $sortDirection
       page: $page
       limit: $limit
     ) {
@@ -170,6 +230,9 @@ export const GET_MARKETPLACE_DATA = gql`
     $minPrice: Float
     $maxPrice: Float
     $status: AccountStatus
+    $isFeatured: Boolean
+    $sortBy: String
+    $sortDirection: String
     $page: Int
     $limit: Int
   ) {
@@ -178,6 +241,9 @@ export const GET_MARKETPLACE_DATA = gql`
       minPrice: $minPrice
       maxPrice: $maxPrice
       status: $status
+      isFeatured: $isFeatured
+      sortBy: $sortBy
+      sortDirection: $sortDirection
       page: $page
       limit: $limit
     ) {

@@ -69,9 +69,9 @@ development_status:
   3-2-favorites-wishlist-feature: done
   3-3-favorites-rest-api-graphql-integration: done
   3-4-account-detail-page-related-data: done
-  3-5-marketplace-homepage-featured-listings: backlog
-  3-6-advanced-search-filter-ui: backlog
-  3-7-favorites-management-page: backlog
+  3-5-marketplace-homepage-featured-listings: done
+  3-6-advanced-search-filter-ui: done
+  3-7-favorites-management-page: done
   3-8-redis-caching-strategy-implementation: backlog
   3-9-dataloader-n-plus-1-query-prevention: backlog
   3-10-pagination-infinite-scroll: backlog
