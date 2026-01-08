@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@apollo/client';
 import { GET_GAMES } from '../../services/graphql/queries';
-import { useFilters, validateFilters, AccountFilters } from '../../hooks/useFilters';
+import { useFilters, validateFilters, type AccountFilters } from '../../hooks/useFilters';
 
 interface Game {
   id: string;

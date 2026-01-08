@@ -1,11 +1,13 @@
 package com.gameaccount.marketplace.graphql.config;
 
+import com.gameaccount.marketplace.graphql.batchloader.FavoriteBatchLoader;
 import com.gameaccount.marketplace.graphql.batchloader.GameBatchLoader;
 import com.gameaccount.marketplace.graphql.batchloader.UserBatchLoader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -13,19 +15,9 @@ import org.springframework.context.annotation.Configuration;
  *
  * DataLoaders batch queries to related entities, preventing N+1 query problems.
  *
- * NOTE: Full DataLoader integration with Spring Boot 3 GraphQL requires
- * custom data fetchers or field resolvers to manually invoke the DataLoaders.
- * This configuration provides the registry structure that can be used
- * by field-level resolvers when implementing DataLoader batching.
- *
- * For full DataLoader integration in Spring Boot 3 GraphQL, you would:
- * 1. Create this registry as a bean
- * 2. Inject it into custom field resolvers
- * 3. Manually call DataLoader.load() for each relationship
- *
- * Alternative: Use GraphQL Java Tools (graphql-java-tools) which has
- * built-in DataLoader support, but that conflicts with Spring Boot 3's
- * native GraphQL support.
+ * This configuration creates DataLoaderRegistry as a Spring bean that can be
+ * injected into GraphQL resolvers. Spring GraphQL supports DataLoader integration
+ * through proper @SchemaMapping annotations with DataLoader parameters.
  */
 @Slf4j
 @Configuration
@@ -34,19 +26,17 @@ public class DataLoaderConfig {
 
     private final UserBatchLoader userBatchLoader;
     private final GameBatchLoader gameBatchLoader;
+    private final FavoriteBatchLoader favoriteBatchLoader;
 
     /**
-     * Build DataLoaderRegistry with all registered batch loaders.
-     * This registry can be injected into custom field resolvers that
-     * manually handle DataLoader batching for relationships.
+     * Build DataLoaderRegistry bean with all registered batch loaders.
+     * Spring GraphQL supports DataLoader integration through @SchemaMapping
+     * annotations with DataLoader parameters for proper batching.
      *
-     * Note: Spring Boot 3's GraphQL framework does not automatically
-     * invoke DataLoaders - you must create custom field resolvers
-     * that use this registry to batch load relationships.
-     *
-     * @return DataLoaderRegistry with user and game loaders
+     * @return DataLoaderRegistry with user, game, and favorite loaders
      */
-    public DataLoaderRegistry buildDataLoaderRegistry() {
+    @Bean
+    public DataLoaderRegistry dataLoaderRegistry() {
         DataLoaderRegistry registry = new DataLoaderRegistry();
 
         // Register User batch loader
@@ -59,7 +49,12 @@ public class DataLoaderConfig {
                 DataLoader.newDataLoader(gameBatchLoader);
         registry.register("gameLoader", gameDataLoader);
 
-        log.debug("DataLoaderRegistry created with userLoader and gameLoader");
+        // Register Favorite batch loader
+        DataLoader<Long, Boolean> favoriteDataLoader =
+                DataLoader.newDataLoader(favoriteBatchLoader);
+        registry.register("favoriteLoader", favoriteDataLoader);
+
+        log.debug("DataLoaderRegistry created with userLoader, gameLoader, and favoriteLoader");
 
         return registry;
     }

@@ -16,6 +16,8 @@ import com.gameaccount.marketplace.spec.AccountSpecification;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -431,5 +433,40 @@ public class AccountService {
 
         log.debug("Found {} accounts for sellerId: {}", results.getTotalElements(), sellerId);
         return results;
+    }
+
+    /**
+     * Get featured accounts with caching.
+     * Returns approved accounts that are marked as featured.
+     * Results are cached for 5 minutes (configured in CacheConfig).
+     * Cache key: "featured::featured-accounts"
+     *
+     * @return List of featured accounts
+     */
+    @Cacheable(value = "featured", key = "'featured-accounts'")
+    @Transactional(readOnly = true)
+    public List<Account> getFeaturedAccounts() {
+        log.debug("Fetching featured accounts");
+        return accountRepository.findByStatusAndIsFeatured(AccountStatus.APPROVED, true);
+    }
+
+    /**
+     * Get popular accounts (most viewed) with caching.
+     * Returns approved accounts sorted by view count.
+     * Results are cached for 5 minutes (configured in CacheConfig).
+     * Cache key: "featured::popular-accounts"
+     *
+     * Note: This demonstrates @CachePut pattern - when an account's view count
+     * is incremented, we could use @CachePut to update the cached list instead
+     * of evicting and recomputing. However, for simplicity we use @CacheEvict
+     * in incrementViewCountAsync().
+     *
+     * @return List of popular accounts
+     */
+    @Cacheable(value = "featured", key = "'popular-accounts'")
+    @Transactional(readOnly = true)
+    public List<Account> getPopularAccounts() {
+        log.debug("Fetching popular accounts");
+        return accountRepository.findPopularAccounts(AccountStatus.APPROVED);
     }
 }

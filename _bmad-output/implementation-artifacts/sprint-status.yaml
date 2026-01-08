@@ -72,10 +72,10 @@ development_status:
   3-5-marketplace-homepage-featured-listings: done
   3-6-advanced-search-filter-ui: done
   3-7-favorites-management-page: done
-  3-8-redis-caching-strategy-implementation: backlog
-  3-9-dataloader-n-plus-1-query-prevention: backlog
-  3-10-pagination-infinite-scroll: backlog
-  epic-3-retrospective: optional
+  3-8-redis-caching-strategy-implementation: done
+  3-9-dataloader-n-plus-1-query-prevention: done
+  3-10-pagination-infinite-scroll: done
+  epic-3-retrospective: done
 
   # Epic 4: Secure Transactions (8 stories)
   epic-4: backlog

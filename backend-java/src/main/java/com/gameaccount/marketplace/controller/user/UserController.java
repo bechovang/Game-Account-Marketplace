@@ -39,6 +39,36 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Upgrade current user to SELLER role.
+     * Allows BUYER users to become SELLERs so they can create account listings.
+     */
+    @PostMapping("/become-seller")
+    public ResponseEntity<UserResponse> becomeSeller(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Update role to SELLER
+        user.setRole(User.Role.SELLER);
+        userRepository.save(user);
+
+        UserResponse response = UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .avatar(user.getAvatar())
+                .role(user.getRole())
+                .status(user.getStatus())
+                .balance(user.getBalance())
+                .rating(user.getRating())
+                .totalReviews(user.getTotalReviews())
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
     // Password change endpoint - TODO: Implement in future story
     // @PutMapping("/password")
     // public ResponseEntity<Void> changePassword(...)

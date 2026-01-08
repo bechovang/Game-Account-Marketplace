@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { useFilters, AccountFilters } from '../../hooks/useFilters';
+import { useFilters, type AccountFilters } from '../../hooks/useFilters';
 import { GET_GAMES } from '../../services/graphql/queries';
 
 interface Game {

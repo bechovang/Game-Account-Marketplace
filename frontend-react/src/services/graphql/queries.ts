@@ -124,6 +124,74 @@ export const GET_ACCOUNTS = gql`
 `;
 
 /**
+ * GET_ACCOUNTS_CONNECTION - Query accounts with cursor-based pagination (Relay specification)
+ * @param filters - AccountFiltersInput with gameId, minPrice, maxPrice, status, isFeatured
+ * @param sort - AccountSortInput with field and direction
+ * @param after - Cursor for forward pagination
+ * @param before - Cursor for backward pagination
+ * @param first - Number of items after cursor (max 50)
+ * @param last - Number of items before cursor (max 50)
+ */
+export const GET_ACCOUNTS_CONNECTION = gql`
+  query GetAccountsConnection(
+    $filters: AccountFiltersInput
+    $sort: AccountSortInput
+    $after: String
+    $before: String
+    $first: Int
+    $last: Int
+  ) {
+    accountsConnection(
+      filters: $filters
+      sort: $sort
+      after: $after
+      before: $before
+      first: $first
+      last: $last
+    ) {
+      edges {
+        node {
+          id
+          title
+          description
+          level
+          rank
+          price
+          status
+          viewsCount
+          isFeatured
+          isFavorited
+          images
+          createdAt
+          updatedAt
+          seller {
+            id
+            fullName
+            avatar
+            rating
+            totalReviews
+          }
+          game {
+            id
+            name
+            slug
+            iconUrl
+          }
+        }
+        cursor
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+      totalCount
+    }
+  }
+`;
+
+/**
  * GET_ACCOUNT - Get a single account by ID
  * @param id - Account ID
  */

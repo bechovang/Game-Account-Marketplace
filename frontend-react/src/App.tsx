@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
+import ProfilePage from './pages/ProfilePage';
 import CreateListingPage from './pages/CreateListingPage';
 import EditListingPage from './pages/EditListingPage';
 import MyListingsPage from './pages/MyListingsPage';
@@ -51,6 +52,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <FavoritesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Profile Page */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />

@@ -5,6 +5,7 @@ import com.gameaccount.marketplace.exception.ResourceNotFoundException;
 import com.gameaccount.marketplace.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import java.util.List;
  * Service layer for Game entity operations.
  * Provides business logic for game lookups used by GraphQL resolvers.
  * Follows shared service layer pattern - both GraphQL and REST use this service.
+ * Games list is cached with 1-hour TTL as it rarely changes.
  */
 @Service
 @RequiredArgsConstructor
@@ -23,10 +25,13 @@ public class GameService {
     private final GameRepository gameRepository;
 
     /**
-     * Get all games.
+     * Get all games with caching.
+     * Results are cached for 1 hour (configured in CacheConfig).
+     * Cache key: "games::all"
      *
      * @return List of all games
      */
+    @Cacheable(value = "games", key = "'all'")
     @Transactional(readOnly = true)
     public List<Game> getAllGames() {
         log.debug("Fetching all games");

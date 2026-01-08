@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery } from '@apollo/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GET_ACCOUNTS, GET_GAMES } from '../services/graphql/queries';
-import { useFilters, AccountFilters } from '../hooks/useFilters';
+import { useFilters, type AccountFilters } from '../hooks/useFilters';
 import AccountCard from '../components/account/AccountCard';
 import FilterSidebar from '../components/search/FilterSidebar';
 import SortDropdown from '../components/search/SortDropdown';

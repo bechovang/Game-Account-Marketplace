@@ -70,13 +70,32 @@ type Account {
     updatedAt: String!
 }
 
-# Pagination wrapper for account queries
+# Pagination wrapper for account queries (legacy - will be deprecated)
 type PaginatedAccounts {
     content: [Account!]!
     totalElements: Int!
     totalPages: Int!
     currentPage: Int!
     pageSize: Int!
+}
+
+# Cursor-based pagination types (Relay specification)
+type AccountConnection {
+    edges: [AccountEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+
+type AccountEdge {
+    node: Account!
+    cursor: String!
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
 }
 
 # ================================
@@ -100,6 +119,19 @@ input UpdateAccountInput {
     rank: String
     price: Float!
     images: [String!]!
+}
+
+input AccountFiltersInput {
+    gameId: ID
+    minPrice: Float
+    maxPrice: Float
+    status: AccountStatus
+    isFeatured: Boolean
+}
+
+input AccountSortInput {
+    field: String!
+    direction: String!
 }
 
 # ================================
@@ -131,6 +163,24 @@ type Query {
         page: Int
         limit: Int
     ): PaginatedAccounts!
+
+    """
+    Query accounts with cursor-based pagination (Relay specification)
+    - filters: AccountFiltersInput with gameId, minPrice, maxPrice, status, isFeatured
+    - sort: AccountSortInput with field and direction
+    - after: Cursor for forward pagination
+    - before: Cursor for backward pagination
+    - first: Number of items after cursor (max 50)
+    - last: Number of items before cursor (max 50)
+    """
+    accountsConnection(
+        filters: AccountFiltersInput
+        sort: AccountSortInput
+        after: String
+        before: String
+        first: Int
+        last: Int
+    ): AccountConnection!
 
     """
     Get a single account by ID
