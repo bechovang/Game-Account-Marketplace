@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -6,8 +6,7 @@ import * as yup from 'yup';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 import { useGames, useCreateAccount } from '../hooks/use-graphql';
-import { AccountStatus } from '../types/graphql';
-import type { CreateAccountInput } from '../types/graphql';
+import type { CreateAccountInput, Game } from '../types/graphql';
 
 /**
  * Validation schema for account creation form
@@ -38,7 +37,6 @@ const CreateListingPage = () => {
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<CreateAccountInput & { gameId: string }>({
     resolver: yupResolver(schema),
@@ -114,14 +112,19 @@ const CreateListingPage = () => {
    */
   const onSubmit = async (data: CreateAccountInput & { gameId: string }) => {
     try {
-      // For now, use placeholder URLs for images
-      // In production, this would upload to cloud storage
+      // Construct clean input - remove undefined/null values for optional fields
       const input: CreateAccountInput = {
-        ...data,
+        gameId: data.gameId,
+        title: data.title,
+        price: data.price,
         images: data.images.length > 0 ? data.images : ['https://placeholder.example.com/default.jpg'],
+        // Only include optional fields if they have values
+        ...(data.description && { description: data.description }),
+        ...(data.level && { level: data.level }),
+        ...(data.rank && { rank: data.rank }),
       };
 
-      const result = await createAccount({ variables: { input } });
+      const result = await createAccount({ input });
 
       if (result) {
         toast.success('Account listing created successfully!');
@@ -163,7 +166,7 @@ const CreateListingPage = () => {
             disabled={creating}
           >
             <option value="">Select a game</option>
-            {games.map((game) => (
+            {games.map((game: Game) => (
               <option key={game.id} value={game.id}>
                 {game.name}
               </option>

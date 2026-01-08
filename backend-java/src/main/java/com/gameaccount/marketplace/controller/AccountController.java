@@ -5,7 +5,9 @@ import com.gameaccount.marketplace.dto.request.UpdateAccountRequest;
 import com.gameaccount.marketplace.dto.response.AccountResponse;
 import com.gameaccount.marketplace.entity.Account;
 import com.gameaccount.marketplace.entity.Account.AccountStatus;
+import com.gameaccount.marketplace.entity.User;
 import com.gameaccount.marketplace.exception.BusinessException;
+import com.gameaccount.marketplace.repository.UserRepository;
 import com.gameaccount.marketplace.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +29,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.scheduling.annotation.Async;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -48,6 +51,7 @@ import java.util.stream.Collectors;
 public class AccountController {
 
     private final AccountService accountService;
+    private final UserRepository userRepository;
 
     /**
      * Create a new account listing.
@@ -212,6 +216,27 @@ public class AccountController {
     }
 
     /**
+     * Increment account view count asynchronously.
+     * Public endpoint - fire-and-forget operation.
+     * Returns immediately while view count is incremented in the background.
+     *
+     * @param id Account ID
+     * @return HTTP 200 on success
+     */
+    @PatchMapping("/{id}/view")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Increment view count", description = "Increment account view count asynchronously")
+    public void incrementViewCount(
+            @Parameter(description = "Account ID", required = true)
+            @PathVariable Long id
+    ) {
+        log.debug("PATCH /api/accounts/{}/view", id);
+
+        // Delegate to async service method (fire-and-forget)
+        accountService.incrementViewCountAsync(id);
+    }
+
+    /**
      * Search accounts with filters and pagination.
      * Public endpoint - no authentication required.
      * Results are cached for 10 minutes.
@@ -305,8 +330,8 @@ public class AccountController {
         int limitNum = (limit > 0 && limit <= 100) ? limit : 20;
         Pageable pageable = PageRequest.of(pageNum, limitNum, Sort.by("createdAt").descending());
 
-        // Use optimized query that filters at database level
-        Page<Account> accountsPage = accountService.getSellerAccounts(userId, AccountStatus.APPROVED, pageable);
+        // Get ALL seller's accounts regardless of status (PENDING, APPROVED, REJECTED, etc.)
+        Page<Account> accountsPage = accountService.getSellerAccounts(userId, null, pageable);
 
         // Build response map
         Map<String, Object> response = new HashMap<>();
@@ -416,12 +441,12 @@ public class AccountController {
             throw new BusinessException("User must be authenticated to perform this action");
         }
 
-        try {
-            return Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            log.error("Failed to parse user ID from authentication: {}", authentication.getName());
-            throw new BusinessException("Invalid authentication token");
-        }
+        // In our JWT setup, the username contains the email
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException("User not found: " + email));
+        
+        return user.getId();
     }
 
     /**

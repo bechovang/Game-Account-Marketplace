@@ -3,10 +3,12 @@ package com.gameaccount.marketplace.graphql.mutation;
 import com.gameaccount.marketplace.dto.request.CreateAccountRequest;
 import com.gameaccount.marketplace.dto.request.UpdateAccountRequest;
 import com.gameaccount.marketplace.entity.Account;
+import com.gameaccount.marketplace.entity.User;
 import com.gameaccount.marketplace.exception.BusinessException;
 import com.gameaccount.marketplace.exception.ResourceNotFoundException;
 import com.gameaccount.marketplace.graphql.dto.CreateAccountInput;
 import com.gameaccount.marketplace.graphql.dto.UpdateAccountInput;
+import com.gameaccount.marketplace.repository.UserRepository;
 import com.gameaccount.marketplace.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Controller;
 public class AccountMutation {
 
     private final AccountService accountService;
+    private final UserRepository userRepository;
 
     /**
      * Create a new account listing.
@@ -155,13 +158,12 @@ public class AccountMutation {
             throw new BusinessException("User must be authenticated to perform this action");
         }
 
-        // In our JWT setup, the username contains the user ID
-        try {
-            return Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            log.error("Failed to parse user ID from authentication: {}", authentication.getName());
-            throw new BusinessException("Invalid authentication token");
-        }
+        // In our JWT setup, the username contains the email
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException("User not found: " + email));
+        
+        return user.getId();
     }
 
     /**

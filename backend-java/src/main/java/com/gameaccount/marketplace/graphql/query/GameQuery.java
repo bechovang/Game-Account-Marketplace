@@ -4,6 +4,7 @@ import com.gameaccount.marketplace.entity.Game;
 import com.gameaccount.marketplace.service.GameService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
@@ -37,7 +38,7 @@ public class GameQuery {
      * Delegates to GameService.getGameById()
      */
     @QueryMapping
-    public Game game(Long id) {
+    public Game game(@Argument Long id) {
         log.debug("GraphQL game query - id: {}", id);
         return gameService.getGameById(id);
     }
@@ -48,7 +49,7 @@ public class GameQuery {
      * Delegates to GameService.getGameBySlug()
      */
     @QueryMapping
-    public Game gameBySlug(String slug) {
+    public Game gameBySlug(@Argument String slug) {
         log.debug("GraphQL gameBySlug query - slug: {}", slug);
         return gameService.getGameBySlug(slug);
     }

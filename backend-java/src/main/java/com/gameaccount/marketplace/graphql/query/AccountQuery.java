@@ -7,10 +7,13 @@ import com.gameaccount.marketplace.graphql.dto.PaginatedAccountResponse;
 import com.gameaccount.marketplace.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 /**
@@ -30,8 +33,12 @@ public class AccountQuery {
      * Delegates to AccountService.searchAccounts()
      */
     @QueryMapping
-    public PaginatedAccountResponse accounts(Long gameId, Double minPrice, Double maxPrice,
-                                             String status, Integer page, Integer limit) {
+    public PaginatedAccountResponse accounts(@Argument Long gameId, 
+                                             @Argument Double minPrice, 
+                                             @Argument Double maxPrice,
+                                             @Argument String status, 
+                                             @Argument Integer page, 
+                                             @Argument Integer limit) {
         log.debug("GraphQL accounts query - gameId: {}, minPrice: {}, maxPrice: {}, status: {}, page: {}, limit: {}",
                 gameId, minPrice, maxPrice, status, page, limit);
 
@@ -69,18 +76,24 @@ public class AccountQuery {
 
     /**
      * Get a single account by ID.
-     * Delegates to AccountService.getAccountById()
-     * Automatically increments view count.
+     * Delegates to AccountService.getAccountByIdWithoutIncrement()
+     * Does NOT increment view count - that's handled by separate PATCH endpoint.
+     * Results are cached for 10 minutes.
+     *
+     * Note: Authentication required (@PreAuthorize) to prevent unauthorized access.
      */
     @QueryMapping
-    public Account account(Long id) {
+    @PreAuthorize("isAuthenticated()")
+    @Cacheable(value = "accounts", key = "#id")
+    public Account account(@Argument Long id) {
         log.debug("GraphQL account query - id: {}", id);
 
         if (id == null || id <= 0) {
             throw new ResourceNotFoundException("Valid account ID is required");
         }
 
-        // Delegate to service layer
-        return accountService.getAccountById(id);
+        // Delegate to service layer - fetch WITHOUT incrementing view count
+        // View count is incremented separately via PATCH /api/accounts/{id}/view
+        return accountService.getAccountByIdWithoutIncrement(id);
     }
 }

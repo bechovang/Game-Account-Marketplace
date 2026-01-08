@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useAccounts, useDeleteAccount } from '../hooks/use-graphql';
+import { useDeleteAccount } from '../hooks/use-graphql';
 import { AccountStatus } from '../types/graphql';
 import DeleteAccountModal from '../components/modals/DeleteAccountModal';
+import { apiClient } from '../services/rest/axiosInstance';
 
 /**
  * Loading skeleton for account cards
@@ -133,13 +134,44 @@ const AccountCard = ({ account, onEdit, onDelete }: AccountCardProps) => {
  */
 const MyListingsPage = () => {
   const navigate = useNavigate();
-  const { accounts, pagination, loading, refetch } = useAccounts({
-    status: AccountStatus.APPROVED,
-  });
+  
+  // State for seller's own accounts
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [pagination, setPagination] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const { deleteAccount, loading: deleting } = useDeleteAccount();
+
+  // Fetch seller's own accounts from REST endpoint
+  const fetchMyListings = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/api/accounts/seller/my-accounts');
+      
+      // Response is paginated
+      if (response.content) {
+        setAccounts(response.content);
+        setPagination({
+          totalElements: response.totalElements,
+          totalPages: response.totalPages,
+          currentPage: response.number,
+          pageSize: response.size,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch my listings:', error);
+      toast.error('Failed to load your listings');
+      setAccounts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMyListings();
+  }, []);
 
   /**
    * Handle edit button click
@@ -169,7 +201,7 @@ const MyListingsPage = () => {
         toast.success('Account listing deleted successfully');
         setDeleteModalOpen(false);
         setAccountToDelete(null);
-        refetch();
+        fetchMyListings(); // Refresh the list
       }
     } catch (error) {
       console.error('Failed to delete account:', error);

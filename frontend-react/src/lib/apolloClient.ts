@@ -18,8 +18,8 @@ const httpLink = createHttpLink({
  * Auth Link - Attaches JWT token to each request
  */
 const authLink = setContext((_, { headers }) => {
-  // Get JWT token from localStorage (support both auth_token and access_token)
-  const token = localStorage.getItem('auth_token') || localStorage.getItem('access_token');
+  // Get JWT token from localStorage
+  const token = localStorage.getItem('access_token');
 
   return {
     headers: {
@@ -34,7 +34,7 @@ const authLink = setContext((_, { headers }) => {
  * - 401/403: Clears token and shows auth error
  * - Network errors: Shows toast notification
  */
-const errorLink = onError(({ graphQLErrors, networkError, forward }) => {
+const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
   // Handle GraphQL errors
   if (graphQLErrors) {
     for (const err of graphQLErrors) {
@@ -47,9 +47,7 @@ const errorLink = onError(({ graphQLErrors, networkError, forward }) => {
       // Handle authentication errors
       if (extensions?.code === 'UNAUTHENTICATED' || extensions?.code === 'FORBIDDEN') {
         // Clear invalid token
-        localStorage.removeItem('auth_token');
         localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
 
         // Show error toast
         toast.error('Authentication expired. Please log in again.');
@@ -70,9 +68,7 @@ const errorLink = onError(({ graphQLErrors, networkError, forward }) => {
 
     // Check if it's a 401 Unauthorized
     if ('statusCode' in networkError && networkError.statusCode === 401) {
-      localStorage.removeItem('auth_token');
       localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
       toast.error('Authentication failed. Please log in again.');
       window.location.href = '/login';
       return;
@@ -115,7 +111,8 @@ export const apolloClient = new ApolloClient({
           },
         },
       },
-    }),
+    },
+  }),
   defaultOptions: {
     watchQuery: {
       fetchPolicy: 'cache-and-network', // Always fetch from network while using cache

@@ -9,6 +9,14 @@ interface User {
   role: 'BUYER' | 'SELLER' | 'ADMIN';
 }
 
+interface LoginResponse {
+  token: string;
+  userId: number;
+  email: string;
+  fullName: string;
+  role: 'BUYER' | 'SELLER' | 'ADMIN';
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -25,32 +33,52 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Load token from localStorage on mount
-    const storedToken = localStorage.getItem('access_token');
-    if (storedToken) {
-      setToken(storedToken);
-      // TODO: Fetch user profile using token
+  // Fetch user profile from backend using stored token
+  const fetchUserProfile = async (authToken: string): Promise<User | null> => {
+    try {
+      const response = await apiClient.get<User>('/api/auth/me');
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      // If token is invalid, clear it
+      localStorage.removeItem('access_token');
+      return null;
     }
-    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('access_token');
+      if (storedToken) {
+        setToken(storedToken);
+        // Fetch user profile using token
+        const userProfile = await fetchUserProfile(storedToken);
+        if (userProfile) {
+          setUser(userProfile);
+        } else {
+          // Token was invalid, clear it
+          setToken(null);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post<{
-        token: string;
-        userId: number;
-        email: string;
-        role: 'BUYER' | 'SELLER' | 'ADMIN';
-      }>('/api/auth/login', { email, password });
-      setToken(response.token);
-      setUser({
+      const response = await apiClient.post<LoginResponse>('/api/auth/login', { email, password });
+      const userData: User = {
         id: response.userId,
         email: response.email,
-        fullName: '',
+        fullName: response.fullName,
         role: response.role,
-      });
+      };
+
+      setToken(response.token);
+      setUser(userData);
       localStorage.setItem('access_token', response.token);
       window.location.href = '/'; // Redirect to home
     } catch (error) {
