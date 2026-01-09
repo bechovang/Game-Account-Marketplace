@@ -109,6 +109,13 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Datafaker - For test data generation -->
+        <dependency>
+            <groupId>net.datafaker</groupId>
+            <artifactId>datafaker</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+
         <!-- SpringDoc OpenAPI (Swagger UI) -->
         <dependency>
             <groupId>org.springdoc</groupId>

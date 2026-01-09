@@ -109,7 +109,23 @@ This folder contains complete, auto-generated documentation for the **Game Accou
 
 ---
 
-### 5. **State & Progress Tracking**
+### 5. **Database Seeding Guide**
+**File:** [`DATABASE-SEEDING-GUIDE.md`](./DATABASE-SEEDING-GUIDE.md)
+
+**Contents:**
+- Quick start for generating large-scale test data
+- DatabaseSeeder configuration (target counts, batch size)
+- Seeding profiles and cleanup options
+- Performance testing with 100,000+ records
+- Benchmarking before/after optimizations
+- Configuration tuning for performance
+- Troubleshooting common seeding issues
+
+**When to read:** When setting up test data, performance testing, or demonstrating caching/DataLoader optimizations.
+
+---
+
+### 6. **State & Progress Tracking**
 **File:** [`project-scan-report.json`](./project-scan-report.json)
 
 **Contents:**
@@ -121,6 +137,22 @@ This folder contains complete, auto-generated documentation for the **Game Accou
 - Timestamps
 
 **When to read:** For workflow metadata and documentation generation tracking.
+
+---
+
+### 7. **Changelog**
+**File:** [`CHANGELOG-2026-01-09.md`](./CHANGELOG-2026-01-09.md)
+
+**Contents:**
+- Daily changelog entries
+- Authentication fixes (JWT email parsing)
+- Favorites pagination implementation
+- CORS configuration updates
+- Apollo cache fixes
+- File modification summary
+- Testing results
+
+**When to read:** To track recent changes, bug fixes, and feature additions.
 
 ---
 
@@ -448,6 +480,8 @@ Use @bmad/bmm/workflows/document-project
 | [`source-tree-analysis.md`](./source-tree-analysis.md) | Complete file structure & organization | ~600 |
 | [`development-guide.md`](./development-guide.md) | Setup, build, test, debug, troubleshoot | ~700 |
 | [`api-documentation.md`](./api-documentation.md) | REST + GraphQL API reference | ~900 |
+| [`DATABASE-SEEDING-GUIDE.md`](./DATABASE-SEEDING-GUIDE.md) | Large-scale test data generation guide | ~800 |
+| [`CHANGELOG-2026-01-09.md`](./CHANGELOG-2026-01-09.md) | Daily changelog with bug fixes | ~500 |
 | [`project-scan-report.json`](./project-scan-report.json) | Workflow state & metadata | JSON |
 
 **Additional Documentation (Project Root):**
