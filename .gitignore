@@ -46,3 +46,16 @@ build/
 
 # uploads (will be created later)
 uploads/
+
+# Claude / AI output
+.claude/cache/
+.claude/history/
+_bmad-output/
+
+# Temp files
+*.tmp
+*.temp
+*.cache
+
+# Background task outputs
+*.pid
