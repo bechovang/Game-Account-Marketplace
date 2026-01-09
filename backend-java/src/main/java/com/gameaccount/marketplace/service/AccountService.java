@@ -363,8 +363,9 @@ public class AccountService {
                 effectiveStatus = AccountStatus.APPROVED;
             }
         } else {
-            // Buyers and public users only see APPROVED accounts
-            effectiveStatus = AccountStatus.APPROVED;
+            // Buyers and public users - for development, show both APPROVED and PENDING
+            // TODO: Change back to APPROVED only for production
+            effectiveStatus = null; // No status filter - show all accounts
         }
 
         // Apply sorting if specified

@@ -53,14 +53,18 @@ public class AccountQuery {
     public PaginatedAccountResponse accounts(@Argument Long gameId,
                                              @Argument Double minPrice,
                                              @Argument Double maxPrice,
+                                             @Argument Integer minLevel,
+                                             @Argument Integer maxLevel,
+                                             @Argument String rank,
                                              @Argument String status,
                                              @Argument Boolean isFeatured,
+                                             @Argument String q,
                                              @Argument String sortBy,
                                              @Argument String sortDirection,
                                              @Argument Integer page,
                                              @Argument Integer limit) {
-        log.debug("GraphQL accounts query - gameId: {}, minPrice: {}, maxPrice: {}, status: {}, isFeatured: {}, sortBy: {}, sortDirection: {}, page: {}, limit: {}",
-                gameId, minPrice, maxPrice, status, isFeatured, sortBy, sortDirection, page, limit);
+        log.debug("GraphQL accounts query - gameId: {}, minPrice: {}, maxPrice: {}, minLevel: {}, maxLevel: {}, rank: {}, status: {}, isFeatured: {}, q: {}, sortBy: {}, sortDirection: {}, page: {}, limit: {}",
+                gameId, minPrice, maxPrice, minLevel, maxLevel, rank, status, isFeatured, q, sortBy, sortDirection, page, limit);
 
         // Set defaults for pagination
         int pageNum = (page != null && page >= 0) ? page : 0;
@@ -102,8 +106,12 @@ public class AccountQuery {
                 .gameId(gameId)
                 .minPrice(minPrice)
                 .maxPrice(maxPrice)
+                .minLevel(minLevel)
+                .maxLevel(maxLevel)
+                .rank(rank)
                 .status(statusEnum)
                 .isFeatured(isFeatured)
+                .searchText(q)
                 .sortBy(sortField)
                 .sortDirection(sortDirectionEnum)
                 .build();

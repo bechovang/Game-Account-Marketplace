@@ -70,23 +70,31 @@ export const GET_ACCOUNTS = gql`
     $gameId: ID
     $minPrice: Float
     $maxPrice: Float
+    $minLevel: Int
+    $maxLevel: Int
+    $rank: String
     $status: AccountStatus
     $isFeatured: Boolean
     $sortBy: String
     $sortDirection: String
     $page: Int
     $limit: Int
+    $q: String
   ) {
     accounts(
       gameId: $gameId
       minPrice: $minPrice
       maxPrice: $maxPrice
+      minLevel: $minLevel
+      maxLevel: $maxLevel
+      rank: $rank
       status: $status
       isFeatured: $isFeatured
       sortBy: $sortBy
       sortDirection: $sortDirection
       page: $page
       limit: $limit
+      q: $q
     ) {
       content {
         id

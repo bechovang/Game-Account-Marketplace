@@ -145,8 +145,12 @@ type Query {
     - gameId: Filter by game ID
     - minPrice: Minimum price filter
     - maxPrice: Maximum price filter
+    - minLevel: Minimum level filter
+    - maxLevel: Maximum level filter
+    - rank: Filter by player rank
     - status: Filter by account status
     - isFeatured: Filter to show only featured accounts
+    - q: Full-text search in title and description
     - sortBy: Sort field (price, level, createdAt)
     - sortDirection: Sort direction (ASC, DESC)
     - page: Page number (0-indexed, default 0)
@@ -156,8 +160,12 @@ type Query {
         gameId: ID
         minPrice: Float
         maxPrice: Float
+        minLevel: Int
+        maxLevel: Int
+        rank: String
         status: AccountStatus
         isFeatured: Boolean
+        q: String
         sortBy: String
         sortDirection: String
         page: Int

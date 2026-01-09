@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface Account {
@@ -38,13 +38,14 @@ interface AccountCardProps {
 
 const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
   const navigate = useNavigate();
+  const [iconFailed, setIconFailed] = useState(false);
 
   const handleClick = () => {
     navigate(`/accounts/${account.id}`);
   };
 
   const mainImage = account.images && account.images.length > 0 ? account.images[0] : undefined;
-  const gameIcon = account.game.iconUrl || '/placeholder-game.png';
+  const gameIcon = account.game.iconUrl && !iconFailed ? account.game.iconUrl : null;
   const priceDisplay = account.price.toFixed(2);
   const rating = account.seller.rating || 0;
   const reviewCount = account.seller.totalReviews || 0;
@@ -74,14 +75,14 @@ const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
       <div className="p-4">
         {/* Game Icon and Title */}
         <div className="flex items-center mb-2">
-          <img
-            src={gameIcon}
-            alt={account.game.name}
-            className="w-6 h-6 rounded mr-2"
-            onError={(e) => {
-              e.currentTarget.src = '/placeholder-game.png';
-            }}
-          />
+          {gameIcon && (
+            <img
+              src={gameIcon}
+              alt={account.game.name}
+              className="w-6 h-6 rounded mr-2"
+              onError={() => setIconFailed(true)}
+            />
+          )}
           <h3 className="text-lg font-semibold text-gray-900 truncate flex-1">
             {account.title}
           </h3>

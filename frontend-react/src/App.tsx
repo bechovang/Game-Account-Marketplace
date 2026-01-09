@@ -1,20 +1,31 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from '@/components/ui/sonner';
 import { apolloClient } from './lib/apolloClient';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import SellerRoute from './components/common/SellerRoute';
+import AppHeader from './components/layout/AppHeader';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
-import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ProfilePage from './pages/ProfilePage';
 import CreateListingPage from './pages/CreateListingPage';
 import EditListingPage from './pages/EditListingPage';
 import MyListingsPage from './pages/MyListingsPage';
 import AccountDetailPage from './pages/account/AccountDetailPage';
+
+function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-background">
+      <AppHeader />
+      <main className="min-h-[calc(100vh-4rem)]">
+        {children}
+      </main>
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -31,17 +42,9 @@ function App() {
               path="/"
               element={
                 <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Search Page */}
-            <Route
-              path="/search"
-              element={
-                <ProtectedRoute>
-                  <SearchPage />
+                  <Layout>
+                    <HomePage />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
@@ -51,7 +54,9 @@ function App() {
               path="/favorites"
               element={
                 <ProtectedRoute>
-                  <FavoritesPage />
+                  <Layout>
+                    <FavoritesPage />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
@@ -61,7 +66,9 @@ function App() {
               path="/profile"
               element={
                 <ProtectedRoute>
-                  <ProfilePage />
+                  <Layout>
+                    <ProfilePage />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
@@ -71,7 +78,9 @@ function App() {
               path="/seller/create"
               element={
                 <SellerRoute>
-                  <CreateListingPage />
+                  <Layout>
+                    <CreateListingPage />
+                  </Layout>
                 </SellerRoute>
               }
             />
@@ -79,7 +88,9 @@ function App() {
               path="/seller/edit/:id"
               element={
                 <SellerRoute>
-                  <EditListingPage />
+                  <Layout>
+                    <EditListingPage />
+                  </Layout>
                 </SellerRoute>
               }
             />
@@ -87,7 +98,9 @@ function App() {
               path="/seller/my-listings"
               element={
                 <SellerRoute>
-                  <MyListingsPage />
+                  <Layout>
+                    <MyListingsPage />
+                  </Layout>
                 </SellerRoute>
               }
             />
@@ -97,7 +110,9 @@ function App() {
               path="/accounts/:accountId"
               element={
                 <ProtectedRoute>
-                  <AccountDetailPage />
+                  <Layout>
+                    <AccountDetailPage />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
@@ -105,10 +120,10 @@ function App() {
             {/* Catch All - Redirect to Home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
 
-        {/* Toast Notifications */}
-        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+          {/* Toast Notifications */}
+          <Toaster richColors position="top-right" />
+        </BrowserRouter>
       </AuthProvider>
     </ApolloProvider>
   );
