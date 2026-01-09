@@ -19,19 +19,19 @@ const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'detail', coun
             <div className="relative w-full h-48 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton"></div>
 
             <div className="p-4">
-              {/* Title placeholder */}
+            {/* Title placeholder */}
               <div className="h-6 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded w-3/4 mb-3"></div>
 
               {/* Game badge + Level */}
-              <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3">
                 <div className="w-20 h-6 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded-full"></div>
                 <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded w-16"></div>
-              </div>
+            </div>
 
-              {/* Price placeholder */}
+            {/* Price placeholder */}
               <div className="h-7 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded w-24 mb-4"></div>
 
-              {/* Seller info placeholder */}
+            {/* Seller info placeholder */}
               <div className="flex items-center justify-between pt-3 border-t">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded-full"></div>

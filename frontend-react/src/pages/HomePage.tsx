@@ -98,9 +98,9 @@ const HomePage: React.FC<HomePageProps> = () => {
     if (debouncedSearch !== filters.q) {
       if (debouncedSearch) {
         setFilter('q', debouncedSearch);
-      } else {
-        setFilter('q', undefined);
-      }
+    } else {
+      setFilter('q', undefined);
+    }
     }
   }, [debouncedSearch, filters.q, setFilter]);
 
