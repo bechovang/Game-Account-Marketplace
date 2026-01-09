@@ -8,32 +8,37 @@ interface LoadingSkeletonProps {
 const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ type = 'detail', count = 6 }) => {
   if (type === 'grid') {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse" role="status" aria-label="Loading">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" role="status" aria-label="Loading">
         {Array.from({ length: count }).map((_, index) => (
           <div
             key={index}
-            className="bg-white rounded-lg shadow-md p-4"
+            className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse-subtle"
             aria-hidden="true"
           >
-            {/* Image placeholder */}
-            <div className="w-full h-48 bg-gray-200 rounded-lg mb-4"></div>
+            {/* Image placeholder with shimmer */}
+            <div className="relative w-full h-48 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton"></div>
 
-            {/* Title placeholder */}
-            <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+            <div className="p-4">
+              {/* Title placeholder */}
+              <div className="h-6 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded w-3/4 mb-3"></div>
 
-            {/* Game/Level placeholder */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-            </div>
+              {/* Game badge + Level */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-20 h-6 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded-full"></div>
+                <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded w-16"></div>
+              </div>
 
-            {/* Price placeholder */}
-            <div className="h-5 bg-gray-200 rounded w-1/4 mb-4"></div>
+              {/* Price placeholder */}
+              <div className="h-7 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded w-24 mb-4"></div>
 
-            {/* Seller info placeholder */}
-            <div className="flex items-center justify-between">
-              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              {/* Seller info placeholder */}
+              <div className="flex items-center justify-between pt-3 border-t">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded-full"></div>
+                  <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded w-20"></div>
+                </div>
+                <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-skeleton rounded w-16"></div>
+              </div>
             </div>
           </div>
         ))}

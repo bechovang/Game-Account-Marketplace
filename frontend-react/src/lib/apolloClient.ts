@@ -109,6 +109,44 @@ export const apolloClient = new ApolloClient({
               });
             },
           },
+          // Accounts query with smart caching
+          accounts: {
+            keyArgs: ['gameId', 'minPrice', 'maxPrice', 'minLevel', 'maxLevel', 'rank', 'status', 'q', 'sortBy', 'sortDirection'],
+            merge(existing, incoming, { args }) {
+              // For new search/filter (page 0), replace entirely
+              if (!args?.page || args.page === 0) {
+                return incoming;
+              }
+              
+              // For pagination (page > 0), append to existing
+              if (existing?.content && incoming?.content) {
+                return {
+                  ...incoming,
+                  content: [...existing.content, ...incoming.content]
+                };
+              }
+              
+              return incoming;
+            }
+          },
+          // Favorites query with similar caching
+          favorites: {
+            keyArgs: ['sortBy', 'sortDirection'],
+            merge(existing, incoming, { args }) {
+              if (!args?.page || args.page === 0) {
+                return incoming;
+              }
+              
+              if (existing?.content && incoming?.content) {
+                return {
+                  ...incoming,
+                  content: [...existing.content, ...incoming.content]
+                };
+              }
+              
+              return incoming;
+            }
+          }
         },
       },
     },

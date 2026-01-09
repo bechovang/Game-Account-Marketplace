@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 export interface AccountFilters {
@@ -164,4 +164,50 @@ export const validateFilters = (filters: Partial<AccountFilters>): void => {
   if (filters.maxLevel !== undefined && filters.maxLevel < 0) {
     throw new Error('Maximum level cannot be negative');
   }
+};
+
+/**
+ * Hook for debounced search input with 300ms delay
+ * Provides smooth UX by waiting for user to finish typing
+ */
+export const useDebouncedSearch = (delay: number = 300) => {
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  // Debounce the search term
+  useEffect(() => {
+    // Clear existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Set new timeout
+    timeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, delay);
+
+    // Cleanup on unmount or when searchTerm changes
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [searchTerm, delay]);
+
+  // Sync with URL params when they change externally
+  useEffect(() => {
+    const urlSearch = searchParams.get('q') || '';
+    if (urlSearch !== searchTerm) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
+
+  return {
+    searchTerm,
+    setSearchTerm,
+    debouncedSearch,
+    isDebouncing: searchTerm !== debouncedSearch
+  };
 };

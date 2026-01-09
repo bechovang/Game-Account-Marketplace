@@ -53,7 +53,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
   return (
     <div
       onClick={handleClick}
-      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
+      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover-lift"
     >
       {/* Image */}
       <div className="aspect-w-16 aspect-h-9 bg-gray-200">
