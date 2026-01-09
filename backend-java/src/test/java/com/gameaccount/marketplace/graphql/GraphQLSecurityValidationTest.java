@@ -20,6 +20,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -70,8 +72,14 @@ class GraphQLSecurityValidationTest {
             )
         );
 
-        // Create GraphQL tester
-        graphQlTester = HttpGraphQlTester.create("http://localhost:" + port + "/graphql");
+        // Create GraphQL tester using WebClient
+        WebClient webClient = WebClient.builder()
+            .baseUrl("http://localhost:" + port)
+            .exchangeStrategies(ExchangeStrategies.builder()
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
+                .build())
+            .build();
+        graphQlTester = HttpGraphQlTester.create(webClient);
 
         // Create minimal test data
         createTestData();
@@ -108,7 +116,7 @@ class GraphQLSecurityValidationTest {
             .execute()
             .path("accounts.content")
             .entityList(Object.class)
-            .hasSizeGreaterThanOrEqualTo(1);
+            .hasSizeGreaterThan(0);
 
         log.info("✅ Query within complexity limits executed successfully");
         log.info("✅ Returned {} accounts", response.get().size());
@@ -143,7 +151,7 @@ class GraphQLSecurityValidationTest {
             .execute()
             .path("accounts.content")
             .entityList(Object.class)
-            .hasSizeGreaterThanOrEqualTo(1);
+            .hasSizeGreaterThan(0);
 
         log.info("✅ Query depth 2 is within limit of 10");
     }
@@ -175,7 +183,6 @@ class GraphQLSecurityValidationTest {
                         game {
                             id
                             name
-                            category
                         }
                         isFavorited
                     }
@@ -379,7 +386,7 @@ class GraphQLSecurityValidationTest {
         User user = User.builder()
             .fullName("Test User")
             .email("test@example.com")
-            .passwordHash("hashed_password")
+            .password("hashed_password")
             .role("SELLER")
             .build();
         user = userRepository.save(user);
@@ -387,7 +394,7 @@ class GraphQLSecurityValidationTest {
         // Create test game
         Game game = Game.builder()
             .name("Test Game")
-            .category("MMORPG")
+            .slug("test-game")
             .build();
         game = gameRepository.save(game);
 
@@ -402,7 +409,6 @@ class GraphQLSecurityValidationTest {
             .rank("Gold")
             .status(Account.AccountStatus.APPROVED)
             .isFeatured(false)
-            .createdAt(LocalDateTime.now())
             .build();
         accountRepository.save(account);
 

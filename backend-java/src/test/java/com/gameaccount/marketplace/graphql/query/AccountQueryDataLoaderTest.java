@@ -5,8 +5,6 @@ import com.gameaccount.marketplace.entity.Game;
 import com.gameaccount.marketplace.entity.User;
 import com.gameaccount.marketplace.graphql.dto.PaginatedAccountResponse;
 import com.gameaccount.marketplace.service.AccountService;
-import org.dataloader.DataLoader;
-import org.dataloader.DataLoaderRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -15,85 +13,63 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for AccountQuery DataLoader integration.
+ * Unit tests for AccountQuery field resolvers.
  */
 class AccountQueryDataLoaderTest {
 
     @Mock
     private AccountService accountService;
 
+    @Mock
+    private com.gameaccount.marketplace.util.CursorUtil cursorUtil;
+
+    @Mock
+    private com.gameaccount.marketplace.service.PaginationService paginationService;
+
     private AccountQuery accountQuery;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        accountQuery = new AccountQuery(accountService);
+        accountQuery = new AccountQuery(accountService, cursorUtil, paginationService);
     }
 
     @Test
-    void seller_field_fallbacks_when_no_DataLoader() {
+    void seller_field_returns_seller_from_account() {
         // Given
         Account account = createTestAccount(1L, 100L, 200L);
         User expectedUser = createTestUser(100L);
         account.setSeller(expectedUser);
 
-        // Mock GraphQL context with no DataLoaderRegistry
-        graphql.GraphQLContext context = new graphql.GraphQLContext();
-
         // When
-        CompletableFuture<User> result = accountQuery.seller(account, context);
+        User result = accountQuery.seller(account);
 
-        // Then - should fallback to direct access
-        assertThat(result).isCompletedWithValue(expectedUser);
+        // Then - should return seller from account
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(expectedUser.getId());
+        assertThat(result.getFullName()).isEqualTo(expectedUser.getFullName());
     }
 
     @Test
-    void game_field_fallbacks_when_no_DataLoader() {
+    void game_field_returns_game_from_account() {
         // Given
         Account account = createTestAccount(1L, 100L, 200L);
         Game expectedGame = createTestGame(200L);
         account.setGame(expectedGame);
 
-        // Mock GraphQL context with no DataLoaderRegistry
-        graphql.GraphQLContext context = new graphql.GraphQLContext();
-
         // When
-        CompletableFuture<Game> result = accountQuery.game(account, context);
+        Game result = accountQuery.game(account);
 
-        // Then - should fallback to direct access
-        assertThat(result).isCompletedWithValue(expectedGame);
-    }
-
-    @Test
-    void seller_field_usesDataLoader_when_available() {
-        // Given
-        Account account = createTestAccount(1L, 100L, 200L);
-        User expectedUser = createTestUser(100L);
-
-        // Create mock DataLoaderRegistry and loaders
-        DataLoaderRegistry registry = mock(DataLoaderRegistry.class);
-        DataLoader<Long, User> userLoader = mock(DataLoader.class);
-
-        when(registry.getDataLoader("userLoader")).thenReturn(userLoader);
-        when(userLoader.load(100L)).thenReturn(CompletableFuture.completedFuture(expectedUser));
-
-        // Mock GraphQL context with DataLoaderRegistry
-        graphql.GraphQLContext context = new graphql.GraphQLContext();
-        context.put("dataLoaderRegistry", registry);
-
-        // When
-        CompletableFuture<User> result = accountQuery.seller(account, context);
-
-        // Then
-        assertThat(result).isCompletedWithValue(expectedUser);
+        // Then - should return game from account
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(expectedGame.getId());
+        assertThat(result.getName()).isEqualTo(expectedGame.getName());
     }
 
     @Test
@@ -102,6 +78,7 @@ class AccountQueryDataLoaderTest {
         List<Account> accounts = List.of(createTestAccount(1L, 100L, 200L));
         Page<Account> page = new PageImpl<>(accounts);
         when(accountService.searchAccounts(any(), any(), any(), any())).thenReturn(page);
+        when(accountService.getAllowedSortFields()).thenReturn(java.util.Set.of("price", "level", "createdAt"));
 
         // When
         PaginatedAccountResponse result = accountQuery.accounts(null, null, null, null, null, null, null, 0, 10);

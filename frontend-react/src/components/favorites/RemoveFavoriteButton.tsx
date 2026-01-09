@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { REMOVE_FROM_FAVORITES } from '../../services/graphql/mutations';
+import { GET_FAVORITES } from '../../services/graphql/queries';
 import RemoveFavoriteModal from './RemoveFavoriteModal';
 
 interface RemoveFavoriteButtonProps {
@@ -17,51 +18,30 @@ const RemoveFavoriteButton: React.FC<RemoveFavoriteButtonProps> = ({ accountId, 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [removeFromFavorites, { loading }] = useMutation(REMOVE_FROM_FAVORITES, {
-    optimisticResponse: (variables) => ({
-      removeFromFavorites: true,
-    }),
     update: (cache, { data }) => {
       if (data?.removeFromFavorites) {
-        // Remove from favorites list
-        cache.evict({
+        // Update the isFavorited field for this account
+        cache.modify({
           id: cache.identify({
             __typename: 'Account',
-            id: variables.accountId,
+            id: accountId,
           }),
-          fieldName: 'isFavorited',
-        });
-
-        // Evict from cached favorites list
-        cache.modify({
           fields: {
-            favorites: (existing, { readField }) => {
-              return {
-                ...existing,
-                content: existing?.content?.filter((account: any) => {
-                  const accountRef = cache.identify({
-                    __typename: 'Account',
-                    id: account.id || readField('id', account),
-                  });
-                  return accountRef !== cache.identify({
-                    __typename: 'Account',
-                    id: variables.accountId,
-                  });
-                }),
-              };
-            },
+            isFavorited: () => false,
           },
         });
       }
     },
-    onError: (error) => {
-      // Rollback happens automatically
-      setShowError(true);
-      setTimeout(() => setShowError(false), 3000);
-    },
+    refetchQueries: [{ query: GET_FAVORITES }],
+    awaitRefetchQueries: true,
     onCompleted: (data) => {
       if (data?.removeFromFavorites && onRemove) {
         onRemove();
       }
+    },
+    onError: (error) => {
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
     },
   });
 

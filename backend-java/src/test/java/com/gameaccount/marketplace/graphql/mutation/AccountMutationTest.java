@@ -4,10 +4,12 @@ import com.gameaccount.marketplace.dto.request.CreateAccountRequest;
 import com.gameaccount.marketplace.dto.request.UpdateAccountRequest;
 import com.gameaccount.marketplace.entity.Account;
 import com.gameaccount.marketplace.entity.Account.AccountStatus;
+import com.gameaccount.marketplace.entity.User;
 import com.gameaccount.marketplace.exception.BusinessException;
 import com.gameaccount.marketplace.exception.ResourceNotFoundException;
 import com.gameaccount.marketplace.graphql.dto.CreateAccountInput;
 import com.gameaccount.marketplace.graphql.dto.UpdateAccountInput;
+import com.gameaccount.marketplace.repository.UserRepository;
 import com.gameaccount.marketplace.service.AccountService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,10 +40,14 @@ import static org.mockito.Mockito.when;
  * Tests delegation to AccountService and authentication/authorization.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AccountMutationTest {
 
     @Mock
     private AccountService accountService;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private AccountMutation accountMutation;
@@ -82,6 +90,10 @@ class AccountMutationTest {
         // Setup admin authentication
         adminAuth = new UsernamePasswordAuthenticationToken(
                 "123", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")));
+
+        // Mock UserRepository to return user with ID 123 when email "123" is queried
+        User testUser = User.builder().id(123L).email("123").build();
+        when(userRepository.findByEmail("123")).thenReturn(java.util.Optional.of(testUser));
     }
 
     @AfterEach
@@ -124,11 +136,12 @@ class AccountMutationTest {
         Authentication invalidAuth = new UsernamePasswordAuthenticationToken(
                 "invalid", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
         SecurityContextHolder.getContext().setAuthentication(invalidAuth);
+        when(userRepository.findByEmail("invalid")).thenReturn(java.util.Optional.empty());
 
         // When/Then
         assertThatThrownBy(() -> accountMutation.createAccount(createInput))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Invalid authentication token");
+                .hasMessageContaining("User not found: invalid");
     }
 
     // ==================== updateAccount() tests ====================

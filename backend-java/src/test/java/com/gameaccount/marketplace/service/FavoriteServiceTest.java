@@ -83,7 +83,7 @@ class FavoriteServiceTest {
         Long accountId = 1L;
         Long userId = 1L;
 
-        when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
+        when(accountRepository.findByIdWithRelationships(accountId)).thenReturn(Optional.of(testAccount));
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(favoriteRepository.existsByUserIdAndAccountId(userId, accountId)).thenReturn(false);
         when(favoriteRepository.save(any(Favorite.class))).thenAnswer(invocation -> {
@@ -101,7 +101,7 @@ class FavoriteServiceTest {
         assertThat(result.getUser()).isEqualTo(testUser);
         assertThat(result.getAccount()).isEqualTo(testAccount);
 
-        verify(accountRepository).findById(accountId);
+        verify(accountRepository).findByIdWithRelationships(accountId);
         verify(userRepository).findById(userId);
         verify(favoriteRepository).existsByUserIdAndAccountId(userId, accountId);
         verify(favoriteRepository).save(any(Favorite.class));
@@ -113,7 +113,7 @@ class FavoriteServiceTest {
         Long accountId = 1L;
         Long userId = 1L;
 
-        when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
+        when(accountRepository.findByIdWithRelationships(accountId)).thenReturn(Optional.of(testAccount));
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
         when(favoriteRepository.existsByUserIdAndAccountId(userId, accountId)).thenReturn(true);
 
@@ -122,7 +122,7 @@ class FavoriteServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Account is already in favorites");
 
-        verify(accountRepository).findById(accountId);
+        verify(accountRepository).findByIdWithRelationships(accountId);
         verify(userRepository).findById(userId);
         verify(favoriteRepository).existsByUserIdAndAccountId(userId, accountId);
         verify(favoriteRepository, never()).save(any(Favorite.class));
@@ -134,7 +134,7 @@ class FavoriteServiceTest {
         Long accountId = 999L;
         Long userId = 1L;
 
-        when(accountRepository.findById(accountId)).thenReturn(Optional.empty());
+        when(accountRepository.findByIdWithRelationships(accountId)).thenReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> favoriteService.addToFavorites(accountId, userId))
@@ -142,7 +142,7 @@ class FavoriteServiceTest {
                 .hasMessageContaining("Account not found")
                 .hasMessageContaining("999");
 
-        verify(accountRepository).findById(accountId);
+        verify(accountRepository).findByIdWithRelationships(accountId);
         verify(userRepository, never()).findById(any());
         verify(favoriteRepository, never()).save(any(Favorite.class));
     }
@@ -153,7 +153,7 @@ class FavoriteServiceTest {
         Long accountId = 1L;
         Long userId = 999L;
 
-        when(accountRepository.findById(accountId)).thenReturn(Optional.of(testAccount));
+        when(accountRepository.findByIdWithRelationships(accountId)).thenReturn(Optional.of(testAccount));
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // When & Then
@@ -162,7 +162,7 @@ class FavoriteServiceTest {
                 .hasMessageContaining("User not found")
                 .hasMessageContaining("999");
 
-        verify(accountRepository).findById(accountId);
+        verify(accountRepository).findByIdWithRelationships(accountId);
         verify(userRepository).findById(userId);
         verify(favoriteRepository, never()).save(any(Favorite.class));
     }

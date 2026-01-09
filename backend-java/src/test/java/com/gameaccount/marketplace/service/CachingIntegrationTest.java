@@ -49,7 +49,7 @@ class CachingIntegrationTest {
     @Test
     void testCacheNames() {
         if (cacheManager != null) {
-            String[] cacheNames = cacheManager.getCacheNames();
+            var cacheNames = cacheManager.getCacheNames();
             assertThat(cacheNames).isNotEmpty();
         }
     }

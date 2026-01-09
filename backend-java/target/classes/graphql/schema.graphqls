@@ -209,12 +209,16 @@ type Query {
     Get user's favorite accounts with pagination
     Requires authentication
     - page: Page number (0-indexed, default 0)
-    - limit: Number of results per page (default 20)
+    - limit: Number of results per page (default 20, max 100)
+    - sortBy: Sort field (for future use, currently defaults to created date)
+    - sortDirection: Sort direction ASC or DESC (for future use)
     """
     favorites(
         page: Int
         limit: Int
-    ): [Account!]!
+        sortBy: String
+        sortDirection: String
+    ): PaginatedAccounts!
 }
 
 # ================================

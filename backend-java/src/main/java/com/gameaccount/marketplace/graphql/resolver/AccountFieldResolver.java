@@ -1,41 +1,52 @@
 package com.gameaccount.marketplace.graphql.resolver;
 
 import com.gameaccount.marketplace.entity.Account;
+import com.gameaccount.marketplace.entity.User;
+import com.gameaccount.marketplace.repository.UserRepository;
+import com.gameaccount.marketplace.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.dataloader.DataLoader;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * GraphQL Field Resolver for Account type.
  * Resolves custom fields on Account that require additional logic or services.
- * Uses Spring Boot 3's native @SchemaMapping annotation with DataLoader integration.
  */
 @Slf4j
 @Controller
 @RequiredArgsConstructor
 public class AccountFieldResolver {
 
+    private final AccountService accountService;
+    private final UserRepository userRepository;
+
     /**
-     * Resolve isFavorited field using FavoriteBatchLoader.
-     * Batches favorite checks to prevent N+1 queries.
-     * Spring GraphQL automatically injects the DataLoader bean.
+     * Resolve isFavorited field.
+     * NOTE: DataLoader temporarily disabled - checking directly via service.
+     * TODO: Re-enable DataLoader batching after upgrading to Spring Boot 3.3+
+     *
+     * @param account The account being resolved
+     * @return true if this account is favorited by current user, false otherwise
      */
     @SchemaMapping(typeName = "Account", field = "isFavorited")
-    public CompletableFuture<Boolean> isFavorited(Account account, DataLoader<Long, Boolean> favoriteLoader) {
-        log.debug("Resolving isFavorited field for account: {} using DataLoader", account.getId());
-        // FavoriteBatchLoader gets the user ID from security context
-        return favoriteLoader.load(account.getId());
+    public boolean isFavorited(Account account) {
+        log.debug("Resolving isFavorited field for account: {}", account.getId());
+
+        Long userId = getUserIdIfAuthenticated();
+        if (userId == null) {
+            return false;
+        }
+
+        return accountService.isAccountFavoritedByUser(account.getId(), userId);
     }
 
     /**
      * Get authenticated user ID if available, returns null if not authenticated.
+     * JWT token contains email as subject, so we look up user by email.
      *
      * @return User ID or null if not authenticated
      */
@@ -46,11 +57,9 @@ public class AccountFieldResolver {
             return null;
         }
 
-        try {
-            return Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            log.error("Failed to parse user ID from authentication: {}", authentication.getName());
-            return null;
-        }
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElse(null);
     }
 }

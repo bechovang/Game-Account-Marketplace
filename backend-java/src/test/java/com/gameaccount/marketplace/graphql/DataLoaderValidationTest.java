@@ -20,6 +20,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -76,8 +79,14 @@ class DataLoaderValidationTest {
             )
         );
 
-        // Create GraphQL tester
-        graphQlTester = HttpGraphQlTester.create("http://localhost:" + port + "/graphql");
+        // Create GraphQL tester using WebTestClient
+        WebClient webClient = WebClient.builder()
+            .baseUrl("http://localhost:" + port)
+            .exchangeStrategies(ExchangeStrategies.builder()
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
+                .build())
+            .build();
+        graphQlTester = HttpGraphQlTester.create(webClient);
 
         // Create test data
         createTestData();
@@ -116,7 +125,6 @@ class DataLoaderValidationTest {
                         game {
                             id
                             name
-                            category
                         }
                         isFavorited
                     }
@@ -166,7 +174,7 @@ class DataLoaderValidationTest {
 
         // Given: Multiple accounts from the same seller and game
         List<Account> accounts = accountRepository.findAll();
-        assertThat(accounts).hasSizeGreaterThanOrEqualTo(10);
+        assertThat(accounts).hasSizeGreaterThan(9);
 
         Long firstSellerId = accounts.get(0).getSellerId();
         Long firstGameId = accounts.get(0).getGameId();
@@ -205,7 +213,7 @@ class DataLoaderValidationTest {
             .execute()
             .path("accounts.content")
             .entityList(Object.class)
-            .hasSizeGreaterThanOrEqualTo(10);
+            .hasSizeGreaterThan(9);
 
         log.info("✅ DataLoader caching: Query executed successfully with repeated references");
         log.info("✅ DataLoader caches results within request - same seller/game loaded once");
@@ -390,7 +398,7 @@ class DataLoaderValidationTest {
         testUser = User.builder()
             .fullName("Test Seller")
             .email("seller@test.com")
-            .passwordHash("hashed_password")
+            .password("hashed_password")
             .role("SELLER")
             .build();
         testUser = userRepository.save(testUser);
@@ -398,7 +406,7 @@ class DataLoaderValidationTest {
         // Create test game
         testGame = Game.builder()
             .name("Test Game")
-            .category("MMORPG")
+            .slug("test-game")
             .build();
         testGame = gameRepository.save(testGame);
 
@@ -415,9 +423,7 @@ class DataLoaderValidationTest {
                 .rank("Diamond")
                 .status(Account.AccountStatus.APPROVED)
                 .isFeatured(i <= 5) // First 5 are featured
-                .createdAt(now.minusHours(i))
-                .updatedAt(now.minusHours(i))
-                .viewCount(0L)
+                .viewsCount(0)
                 .build();
             accountRepository.save(account);
         }

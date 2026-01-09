@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/accounts")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 @Tag(name = "Account", description = "Account management APIs")
 public class AccountController {
 

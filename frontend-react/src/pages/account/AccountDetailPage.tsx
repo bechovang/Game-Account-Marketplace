@@ -28,13 +28,6 @@ const AccountDetailPage: React.FC<AccountDetailPageProps> = () => {
 
   // Mutations for favorites
   const [addToFavorites] = useMutation(ADD_TO_FAVORITES, {
-    optimisticResponse: (variables) => ({
-      addToFavorites: {
-        __typename: 'Account',
-        id: data?.account?.id || 0,
-        isFavorited: true
-      }
-    }),
     update: (cache, { data }) => {
       if (data?.addToFavorites) {
         cache.modify({
@@ -55,9 +48,19 @@ const AccountDetailPage: React.FC<AccountDetailPageProps> = () => {
   });
 
   const [removeFromFavorites] = useMutation(REMOVE_FROM_FAVORITES, {
-    optimisticResponse: (variables) => ({
-      removeFromFavorites: true
-    }),
+    update: (cache, { data }) => {
+      if (data?.removeFromFavorites) {
+        cache.modify({
+          id: cache.identify({
+            __typename: 'Account',
+            id: data?.account?.id || accountId
+          }),
+          fields: {
+            isFavorited: () => false
+          }
+        });
+      }
+    },
     onCompleted: () => {
       toast.success('Removed from favorites');
     },

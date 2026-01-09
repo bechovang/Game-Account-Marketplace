@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.CacheManager;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -25,7 +27,7 @@ class CacheWarmerTest {
         mockAccountService = mock(AccountService.class);
         mockCacheManager = mock(CacheManager.class);
 
-        cacheWarmer = new CacheWarmer(mockGameService, mockAccountService, mockCacheManager);
+        cacheWarmer = new CacheWarmer(mockGameService, mockAccountService, List.of(mockCacheManager));
     }
 
     @Test

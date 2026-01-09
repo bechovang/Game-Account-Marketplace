@@ -77,7 +77,7 @@ class DataLoaderPerformanceTest {
             .variable("limit", Math.min(testAccounts.size(), 20))
             .execute()
             .path("accounts.content").entityList(Account.class).hasSizeGreaterThan(0)
-            .path("accounts.totalElements").entity(Long.class).isGreaterThanOrEqualTo(1);
+            .path("accounts.totalElements").entity(Long.class).isEqualTo(1L);
 
         // Note: In a real performance test, you would use a query counter
         // to verify that only 3 queries are executed (accounts + users + games)
@@ -133,7 +133,7 @@ class DataLoaderPerformanceTest {
         }
 
         // Create test game if not exists
-        Game testGame = gameRepository.findBySlug("performance-game").orElse(null);
+        Game testGame = gameRepository.findBySlug("performance-game");
         if (testGame == null) {
             testGame = new Game();
             testGame.setName("Performance Test Game");

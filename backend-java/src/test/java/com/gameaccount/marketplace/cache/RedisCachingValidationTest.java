@@ -1,5 +1,6 @@
 package com.gameaccount.marketplace.cache;
 
+import com.gameaccount.marketplace.dto.request.CreateAccountRequest;
 import com.gameaccount.marketplace.entity.Account;
 import com.gameaccount.marketplace.entity.Game;
 import com.gameaccount.marketplace.entity.User;
@@ -151,19 +152,16 @@ class RedisCachingValidationTest {
         log.info("Initial search returned {} accounts", firstPage.getContent().size());
 
         // WHEN: Create a new account (should evict cache)
-        Account newAccount = Account.builder()
-            .seller(testUser)
-            .game(testGame)
+        CreateAccountRequest request = CreateAccountRequest.builder()
+            .gameId(testGame.getId())
             .title("New Account for Cache Test")
             .description("Test")
             .price(150.0)
             .level(20)
             .rank("Diamond")
-            .status(Account.AccountStatus.APPROVED)
-            .isFeatured(false)
             .build();
 
-        Account created = accountService.createAccount(newAccount);
+        Account created = accountService.createAccount(request, testUser.getId());
         log.info("Created new account with ID: {}", created.getId());
 
         // THEN: Next search should include the new account
@@ -331,15 +329,15 @@ class RedisCachingValidationTest {
         testUser = User.builder()
             .fullName("Test User")
             .email("test@example.com")
-            .passwordHash("hashed_password")
-            .role("ADMIN")
+            .password("hashed_password")
+            .role(User.Role.ADMIN)
             .build();
         testUser = userRepository.save(testUser);
 
         // Create test game
         testGame = Game.builder()
             .name("Test Game")
-            .category("MMORPG")
+            .slug("test-game")
             .build();
         testGame = gameRepository.save(testGame);
 

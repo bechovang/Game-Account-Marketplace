@@ -34,7 +34,9 @@ class QueryComplexityIntegrationTest {
 
         graphQlTester.document(query)
             .execute()
-            .path("accounts").exists();
+            .path("accounts.content")
+            .entityList(Object.class)
+            .hasSizeGreaterThan(0);
     }
 
     @Test
@@ -78,7 +80,9 @@ class QueryComplexityIntegrationTest {
         try {
             graphQlTester.document(complexQuery)
                 .execute()
-                .path("accounts").exists();
+                .path("accounts.content")
+                .entityList(Object.class)
+                .hasSizeGreaterThan(0);
         } catch (Exception e) {
             // If it fails due to complexity, that's expected behavior
             assert e.getMessage().contains("complexity") ||
@@ -111,6 +115,8 @@ class QueryComplexityIntegrationTest {
 
         graphQlTester.document(nestedQuery)
             .execute()
-            .path("accounts.content").exists();
+            .path("accounts.content")
+            .entityList(Object.class)
+            .hasSizeGreaterThan(0);
     }
 }

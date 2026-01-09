@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long>, JpaSpecificationExecutor<Account> {
@@ -49,4 +50,43 @@ public interface AccountRepository extends JpaRepository<Account, Long>, JpaSpec
         @Param("status") AccountStatus status,
         Pageable pageable
     );
+
+    // Search with JOIN FETCH to load related entities and prevent N+1 queries
+    @Query("SELECT DISTINCT a FROM Account a " +
+           "LEFT JOIN FETCH a.seller " +
+           "LEFT JOIN FETCH a.game " +
+           "WHERE (:gameId IS NULL OR a.game.id = :gameId) AND " +
+           "(:minPrice IS NULL OR a.price >= :minPrice) AND " +
+           "(:maxPrice IS NULL OR a.price <= :maxPrice) AND " +
+           "(:minLevel IS NULL OR a.level >= :minLevel) AND " +
+           "(:maxLevel IS NULL OR a.level <= :maxLevel) AND " +
+           "(:rank IS NULL OR LOWER(a.rank) LIKE LOWER(CONCAT('%', :rank, '%'))) AND " +
+           "(:status IS NULL OR a.status = :status) AND " +
+           "(:isFeatured IS NULL OR a.isFeatured = :isFeatured) AND " +
+           "(:searchText IS NULL OR (LOWER(a.title) LIKE LOWER(CONCAT('%', :searchText, '%')) OR " +
+           "LOWER(a.description) LIKE LOWER(CONCAT('%', :searchText, '%')))) AND " +
+           "(:sellerId IS NULL OR a.seller.id = :sellerId)")
+    Page<Account> searchAccountsWithJoins(
+        @Param("gameId") Long gameId,
+        @Param("minPrice") Double minPrice,
+        @Param("maxPrice") Double maxPrice,
+        @Param("minLevel") Integer minLevel,
+        @Param("maxLevel") Integer maxLevel,
+        @Param("rank") String rank,
+        @Param("status") AccountStatus status,
+        @Param("isFeatured") Boolean isFeatured,
+        @Param("searchText") String searchText,
+        @Param("sellerId") Long sellerId,
+        Pageable pageable
+    );
+
+    /**
+     * Find account by ID with seller and game relationships loaded.
+     * Used when returning accounts from mutations to ensure GraphQL field resolvers work.
+     *
+     * @param id the account ID
+     * @return optional containing the account with relationships loaded
+     */
+    @Query("SELECT a FROM Account a LEFT JOIN FETCH a.seller LEFT JOIN FETCH a.game WHERE a.id = :id")
+    Optional<Account> findByIdWithRelationships(@Param("id") Long id);
 }

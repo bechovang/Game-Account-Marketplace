@@ -1,6 +1,8 @@
 package com.gameaccount.marketplace.graphql.batchloader;
 
+import com.gameaccount.marketplace.entity.User;
 import com.gameaccount.marketplace.repository.FavoriteRepository;
+import com.gameaccount.marketplace.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dataloader.BatchLoader;
@@ -27,7 +29,7 @@ import java.util.stream.Collectors;
  *
  * Usage:
  * <pre>
- * DataLoader<Long, Boolean> favoriteLoader = DataLoader.newDataLoader(new FavoriteBatchLoader(favoriteRepository));
+ * DataLoader<Long, Boolean> favoriteLoader = DataLoader.newDataLoader(new FavoriteBatchLoader(favoriteRepository, userRepository));
  * favoriteLoader.loadMany(Arrays.asList(1L, 2L, 3L)); // Single query to check if accounts 1, 2, 3 are favorited
  * </pre>
  */
@@ -37,6 +39,7 @@ import java.util.stream.Collectors;
 public class FavoriteBatchLoader implements BatchLoader<Long, Boolean> {
 
     private final FavoriteRepository favoriteRepository;
+    private final UserRepository userRepository;
 
     /**
      * Executor for async batch loading.
@@ -90,6 +93,7 @@ public class FavoriteBatchLoader implements BatchLoader<Long, Boolean> {
 
     /**
      * Get authenticated user ID if available, returns null if not authenticated.
+     * JWT token contains email as subject, so we look up user by email.
      *
      * @return User ID or null if not authenticated
      */
@@ -100,11 +104,9 @@ public class FavoriteBatchLoader implements BatchLoader<Long, Boolean> {
             return null;
         }
 
-        try {
-            return Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            log.error("Failed to parse user ID from authentication: {}", authentication.getName());
-            return null;
-        }
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElse(null);
     }
 }

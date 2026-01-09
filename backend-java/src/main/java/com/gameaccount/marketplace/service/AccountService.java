@@ -10,6 +10,7 @@ import com.gameaccount.marketplace.entity.User;
 import com.gameaccount.marketplace.exception.BusinessException;
 import com.gameaccount.marketplace.exception.ResourceNotFoundException;
 import com.gameaccount.marketplace.repository.AccountRepository;
+import com.gameaccount.marketplace.repository.FavoriteRepository;
 import com.gameaccount.marketplace.repository.GameRepository;
 import com.gameaccount.marketplace.repository.UserRepository;
 import com.gameaccount.marketplace.spec.AccountSpecification;
@@ -44,6 +45,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
+    private final FavoriteRepository favoriteRepository;
 
     /** Allowed sort fields for account search */
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("price", "level", "createdAt");
@@ -365,20 +367,6 @@ public class AccountService {
             effectiveStatus = AccountStatus.APPROVED;
         }
 
-        // Build specification with role-appropriate status filter
-        var spec = AccountSpecification.buildSearchSpecification(
-            searchRequest.getGameId(),
-            searchRequest.getMinPrice(),
-            searchRequest.getMaxPrice(),
-            searchRequest.getMinLevel(),
-            searchRequest.getMaxLevel(),
-            searchRequest.getRank(),
-            effectiveStatus,
-            searchRequest.getIsFeatured(),
-            searchRequest.getSearchText(),
-            searchRequest.getSellerId()
-        );
-
         // Apply sorting if specified
         Pageable sortedPageable = pageable;
         if (searchRequest.getSortBy() != null && !searchRequest.getSortBy().trim().isEmpty()) {
@@ -403,7 +391,20 @@ public class AccountService {
             }
         }
 
-        Page<Account> results = accountRepository.findAll(spec, sortedPageable);
+        // Use JOIN FETCH query to load related entities and prevent N+1 queries
+        Page<Account> results = accountRepository.searchAccountsWithJoins(
+            searchRequest.getGameId(),
+            searchRequest.getMinPrice(),
+            searchRequest.getMaxPrice(),
+            searchRequest.getMinLevel(),
+            searchRequest.getMaxLevel(),
+            searchRequest.getRank(),
+            effectiveStatus,
+            searchRequest.getIsFeatured(),
+            searchRequest.getSearchText(),
+            searchRequest.getSellerId(),
+            sortedPageable
+        );
 
         log.debug("Advanced search found {} accounts matching criteria (effectiveStatus: {})",
                 results.getTotalElements(), effectiveStatus);
@@ -468,5 +469,59 @@ public class AccountService {
     public List<Account> getPopularAccounts() {
         log.debug("Fetching popular accounts");
         return accountRepository.findPopularAccounts(AccountStatus.APPROVED);
+    }
+
+    /**
+     * Get seller (user) for an account.
+     * Used by GraphQL field resolver for the seller field.
+     * NOTE: DataLoader temporarily disabled - fetching directly.
+     * TODO: Re-enable DataLoader batching after upgrading to Spring Boot 3.3+
+     *
+     * @param accountId ID of the account to get seller for
+     * @return User entity
+     * @throws ResourceNotFoundException if account or seller not found
+     */
+    @Transactional(readOnly = true)
+    public User getSellerForAccount(Long accountId) {
+        log.debug("Fetching seller for accountId: {}", accountId);
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+        return userRepository.findById(account.getSeller().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Seller not found with id: " + account.getSeller().getId()));
+    }
+
+    /**
+     * Get game for an account.
+     * Used by GraphQL field resolver for the game field.
+     * NOTE: DataLoader temporarily disabled - fetching directly.
+     * TODO: Re-enable DataLoader batching after upgrading to Spring Boot 3.3+
+     *
+     * @param accountId ID of the account to get game for
+     * @return Game entity
+     * @throws ResourceNotFoundException if account or game not found
+     */
+    @Transactional(readOnly = true)
+    public Game getGameForAccount(Long accountId) {
+        log.debug("Fetching game for accountId: {}", accountId);
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+        return gameRepository.findById(account.getGame().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + account.getGame().getId()));
+    }
+
+    /**
+     * Check if an account is favorited by a user.
+     * Used by GraphQL field resolver for the isFavorited field.
+     * NOTE: DataLoader temporarily disabled - fetching directly.
+     * TODO: Re-enable DataLoader batching after upgrading to Spring Boot 3.3+
+     *
+     * @param accountId ID of the account
+     * @param userId ID of the user
+     * @return true if favorited, false otherwise
+     */
+    @Transactional(readOnly = true)
+    public boolean isAccountFavoritedByUser(Long accountId, Long userId) {
+        log.debug("Checking if account {} is favorited by user {}", accountId, userId);
+        return favoriteRepository.existsByUserIdAndAccountId(userId, accountId);
     }
 }

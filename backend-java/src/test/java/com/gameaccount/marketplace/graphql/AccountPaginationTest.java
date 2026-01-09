@@ -99,10 +99,7 @@ class AccountPaginationTest {
         graphQlTester.document(query)
             .variable("first", 10)
             .execute()
-            .path("accountsConnection").exists()
-            .path("accountsConnection.edges").exists()
-            .path("accountsConnection.pageInfo").exists()
-            .path("accountsConnection.totalCount").entity(Long.class).isGreaterThanOrEqualTo(2);
+            .path("accountsConnection.totalCount").entity(Long.class).isEqualTo(2L);
     }
 
     @Test
@@ -126,9 +123,10 @@ class AccountPaginationTest {
         var firstResult = graphQlTester.document(firstQuery)
             .execute()
             .path("accountsConnection.pageInfo.hasNextPage").entity(Boolean.class).isEqualTo(true)
-            .path("accountsConnection.pageInfo.endCursor").entity(String.class);
+            .path("accountsConnection.pageInfo.endCursor")
+            .entity(String.class);
 
-        String firstCursor = firstResult.<String>entity(String.class).get();
+        String firstCursor = firstResult.get();
 
         // Now paginate forward
         String secondQuery = """
@@ -343,8 +341,8 @@ class AccountPaginationTest {
             .path("accountsConnection.edges").entityList(Object.class).hasSize(0)
             .path("accountsConnection.pageInfo.hasNextPage").entity(Boolean.class).isEqualTo(false)
             .path("accountsConnection.pageInfo.hasPreviousPage").entity(Boolean.class).isEqualTo(false)
-            .path("accountsConnection.pageInfo.startCursor").entity(Object.class).isNull()
-            .path("accountsConnection.pageInfo.endCursor").entity(Object.class).isNull()
+            .path("accountsConnection.pageInfo.startCursor").valueIsNull()
+            .path("accountsConnection.pageInfo.endCursor").valueIsNull()
             .path("accountsConnection.totalCount").entity(Integer.class).isEqualTo(0);
     }
 

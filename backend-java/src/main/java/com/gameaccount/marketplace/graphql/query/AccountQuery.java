@@ -15,7 +15,6 @@ import com.gameaccount.marketplace.service.PaginationService;
 import com.gameaccount.marketplace.util.CursorUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.dataloader.DataLoader;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -456,26 +455,34 @@ public class AccountQuery {
     }
 
     /**
-     * Resolve seller field using DataLoader batching.
-     * This prevents N+1 queries when loading multiple accounts.
-     * Spring GraphQL automatically injects the DataLoader bean.
+     * Resolve seller field.
+     * Accounts are now loaded with JOIN FETCH, so seller relationship is already available.
      */
     @SchemaMapping(typeName = "Account", field = "seller")
-    public CompletableFuture<User> seller(Account account, DataLoader<Long, User> userLoader) {
-        log.debug("Resolving seller field for account: {} using DataLoader", account.getId());
-        // Use the foreign key ID directly - don't access the already loaded entity
-        return userLoader.load(account.getSellerId());
+    public User seller(Account account) {
+        log.debug("Resolving seller field for account: {}", account.getId());
+        // With JOIN FETCH in the query, the seller should be loaded
+        if (account.getSeller() != null) {
+            return account.getSeller();
+        }
+        // Fallback if somehow not loaded (shouldn't happen with JOIN FETCH)
+        log.warn("Seller not loaded for account {}, falling back to service call", account.getId());
+        return accountService.getSellerForAccount(account.getId());
     }
 
     /**
-     * Resolve game field using DataLoader batching.
-     * This prevents N+1 queries when loading multiple accounts.
-     * Spring GraphQL automatically injects the DataLoader bean.
+     * Resolve game field.
+     * Accounts are now loaded with JOIN FETCH, so game relationship is already available.
      */
     @SchemaMapping(typeName = "Account", field = "game")
-    public CompletableFuture<Game> game(Account account, DataLoader<Long, Game> gameLoader) {
-        log.debug("Resolving game field for account: {} using DataLoader", account.getId());
-        // Use the foreign key ID directly - don't access the already loaded entity
-        return gameLoader.load(account.getGameId());
+    public Game game(Account account) {
+        log.debug("Resolving game field for account: {}", account.getId());
+        // With JOIN FETCH in the query, the game should be loaded
+        if (account.getGame() != null) {
+            return account.getGame();
+        }
+        // Fallback if somehow not loaded (shouldn't happen with JOIN FETCH)
+        log.warn("Game not loaded for account {}, falling back to service call", account.getId());
+        return accountService.getGameForAccount(account.getId());
     }
 }

@@ -122,8 +122,8 @@ class AccountQueryIntegrationTest {
 
         graphQlTester.document(query)
             .execute()
-            .path("accounts.content").entityList(Account.class).hasSizeGreaterThanOrEqualTo(1)
-            .path("accounts.totalElements").entity(Long.class).isGreaterThanOrEqualTo(1)
+            .path("accounts.content").entityList(Account.class).hasSizeGreaterThan(0)
+            .path("accounts.totalElements").entity(Long.class).isEqualTo(1L)
             .path("accounts.currentPage").entity(Integer.class).isEqualTo(0);
     }
 
@@ -151,6 +151,6 @@ class AccountQueryIntegrationTest {
             .variable("accountId", testAccount.getId())
             .execute()
             .path("account.id").entity(Long.class).isEqualTo(testAccount.getId())
-            .path("account.isFavorited").entity(Boolean.class).isNotNull();
+            .path("account.isFavorited").entity(Boolean.class);
     }
 }

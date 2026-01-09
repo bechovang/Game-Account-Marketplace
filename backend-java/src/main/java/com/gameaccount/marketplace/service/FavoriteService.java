@@ -45,8 +45,8 @@ public class FavoriteService {
     public Favorite addToFavorites(Long accountId, Long userId) {
         log.debug("Adding account {} to favorites for user {}", accountId, userId);
 
-        // Verify account exists
-        Account account = accountRepository.findById(accountId)
+        // Verify account exists and load with relationships
+        Account account = accountRepository.findByIdWithRelationships(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
 
         // Verify user exists

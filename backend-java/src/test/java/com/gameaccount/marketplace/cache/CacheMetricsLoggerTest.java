@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.CacheManager;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -18,7 +20,7 @@ class CacheMetricsLoggerTest {
     @BeforeEach
     void setUp() {
         mockCacheManager = mock(CacheManager.class);
-        cacheMetricsLogger = new CacheMetricsLogger(mockCacheManager);
+        cacheMetricsLogger = new CacheMetricsLogger(List.of(mockCacheManager));
     }
 
     @Test
