@@ -82,7 +82,7 @@ development_status:
   4-1-transaction-review-entities: done
   4-2-transactionservice-encryption: done
   4-3-payment-gateway-payos-integration: done
-  4-4-transaction-rest-api: backlog
+  4-4-transaction-rest-api: done
   4-5-purchase-flow-payment-ui: backlog
   4-6-review-system-backend: backlog
   4-7-review-ui-components: backlog

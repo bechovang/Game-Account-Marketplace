@@ -266,6 +266,19 @@ public class TransactionService {
     }
 
     /**
+     * Gets a transaction by ID.
+     *
+     * @param transactionId The ID of the transaction
+     * @return The Transaction entity
+     * @throws ResourceNotFoundException if transaction not found
+     */
+    public Transaction getTransaction(Long transactionId) {
+        log.debug("Fetching transaction: transactionId={}", transactionId);
+        return transactionRepository.findById(transactionId)
+            .orElseThrow(() -> new ResourceNotFoundException("Transaction not found with id: " + transactionId));
+    }
+
+    /**
      * Completes transaction by PayOS order code.
      * Called by webhook when payment is successful.
      * Idempotent: returns actual credentials even for already-completed transactions.
