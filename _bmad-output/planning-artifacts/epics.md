@@ -156,8 +156,7 @@ This document provides the complete epic and story breakdown for Game Account Ma
 - Health checks must be configured for both services
 
 **Integration Requirements:**
-- Payment gateway integration with VNPay
-- Payment gateway integration with Momo
+- Payment gateway integration with PayOS (free QR code bank transfer)
 - Webhook endpoints must handle payment callbacks
 - Webhook handlers must validate payment signatures
 
@@ -330,12 +329,12 @@ FR49: Epic 5 - Persistent connections
 | **E1: Authentication** | ~8 | Identity & access | None |
 | **E2: Listing Management** | ~6 | Seller inventory | E1 |
 | **E3: Discovery** | ~10 | Browse & search | E1, E2 |
-| **E4: Transactions** | ~8 | Buy & sell | E1, E2, E3 |
+| **E4: Transactions** | ~7 | Buy & sell | E1, E2, E3 |
 | **E5: Real-time** | ~8 | Chat & notifications | E1 |
 | **E6: Reviews** | ~6 | Reputation | E1, E4 |
 | **E7: Administration** | ~10 | Platform management | E1, E2 |
 
-**Total: ~56 user stories across 7 epics**
+**Total: ~55 user stories across 7 epics**
 
 ---
 
@@ -1191,8 +1190,32 @@ So that users can browse large numbers of accounts efficiently.
 
 **User Value:** Buyers and sellers need to exchange value securely. This epic enables the core transaction workflow - purchasing, payment callbacks, and transaction lifecycle management.
 
+**Payment Gateway:** PayOS (free, QR code bank transfer)
+
 **Dependencies:** Uses Epic 1 (users authenticated), Epic 2 (accounts to buy), Epic 3 (discovery leads to purchase)
 **Standalone:** Complete transaction system - end-to-end buying flow with payment integration.
+
+---
+
+### 💰 Money Flow & Platform Fee Structure
+
+**Current Implementation (Epic 4):**
+1. Buyer purchases account → Pays full amount via PayOS (bank QR code transfer)
+2. Money goes to **Platform (Admin) PayOS account** - NOT directly to seller
+3. Transaction marked COMPLETED → Buyer receives account credentials
+4. Seller payout (80% to seller, 20% platform fee) → **NOT implemented yet** (future epic)
+
+**Platform Fee Structure:**
+- Buyer pays: 100% of account price (e.g., 100,000 VND)
+- Platform receives: 100% (to admin PayOS account)
+- Seller receives: 80% (via future payout system)
+- Platform fee: 20% (retained by platform)
+
+**IMPORTANT:**
+- Epic 4 handles **buyer payments only** - money flows into platform account
+- Seller payouts (80% split) will be implemented in a future epic (requires wallet/balance system, withdrawal requests, admin approval)
+- Transaction.amount stores the full price paid by buyer (not seller's 80%)
+- No seller wallet or balance tracking in Epic 4
 
 ---
 
@@ -1263,72 +1286,47 @@ So that buyers receive account credentials after payment.
 
 ---
 
-### Story 4.3: Payment Gateway Integration (VNPay)
+### Story 4.3: Payment Gateway Integration (PayOS)
 
 As a developer,
-I want to integrate VNPay payment gateway for processing payments,
-So that buyers can pay for accounts securely.
+I want to integrate PayOS payment gateway for processing payments,
+So that buyers can pay for accounts securely via bank QR code.
 
 **Acceptance Criteria:**
 
 **Given** the TransactionService from Story 4.2
-**When** I implement VNPay integration
-**Then** VNPayService creates payment URL with amount, orderInfo, return URL
-**Then** VNPayService generates secure hash with shared secret key
-**Then** VNPayService redirects user to VNPay payment page
-**Then** POST /api/payment/vnpay-callback endpoint receives payment callbacks
-**Then** callback endpoint validates VNPay signature (vnp_SecureHash)
-**Then** callback endpoint verifies transaction amount matches
-**Then** callback endpoint calls TransactionService.completeTransaction() on success
-**Then** callback endpoint calls TransactionService.cancelTransaction() on failure
-**Then** callback endpoint returns HTTP 200 to VNPay
-**Then** VNPay configuration has vnp_TmnCode, vnp_HashSecret, vnp_PayUrl, vnp_ReturnUrl from application.yml
-**Then** payment flow works: create transaction → redirect to VNPay → payment → callback → complete
+**When** I implement PayOS integration
+**Then** PayOSService creates payment link with orderCode, amount, description, items
+**Then** PayOSService uses payos-java SDK with clientId, apiKey, checksumKey
+**Then** PayOSService generates checkout URL for payment page
+**Then** PayOSService supports cancelUrl and returnUrl for redirect handling
+**Then** PayOSService.getPaymentStatus() queries payment status by orderCode
+**Then** POST /api/payment/payos-webhook endpoint receives payment callbacks
+**Then** webhook endpoint validates using payOS.verifyPaymentWebhookData()
+**Then** webhook endpoint verifies transaction data and checksum
+**Then** webhook endpoint calls TransactionService.completeTransaction() on success (PAID status)
+**Then** webhook endpoint calls TransactionService.cancelTransaction() on failure
+**Then** webhook endpoint returns HTTP 200 to PayOS
+**Then** PayOS configuration has payos.client-id, payos.api-key, payos.checksum-key from application.yml
+**Then** payment flow works: create transaction → redirect to PayOS → QR scan/transfer → webhook → complete
+**Then** payment status values handled: PENDING, PAID, EXPIRED, CANCELLED
 
 **Technical Notes:**
-- Follow VNPay integration documentation
-- Use Spring's @RestController for callback endpoint
-- Store transaction ID in orderInfo for reconciliation
-- Implement idempotency to prevent duplicate callback processing
+- Use official payos-java Maven dependency: `vn.payos:payos-java`
+- Initialize PayOS client: `new PayOS(clientId, apiKey, checksumKey)`
+- Use CreatePaymentLinkRequest with PaymentLinkItem for order details (v2 API)
+- Use payOS.paymentRequests().create() to create payment links
+- Use payOS.webhooks().verify() for webhook verification
+- Use payOS.webhooks().confirm() to register webhook URL
+- Implement idempotency to prevent duplicate webhook processing
+- Store PayOS orderCode in Transaction for reconciliation
 - No frontend yet - just backend integration
 
-**Requirements:** FR44 (VNPay webhook), FR45 (payment callback), FR23 (complete transaction)
+**Requirements:** FR44 (PayOS webhook), FR45 (payment callback), FR23 (complete transaction)
 
 ---
 
-### Story 4.4: Payment Gateway Integration (Momo)
-
-As a developer,
-I want to integrate Momo payment gateway as alternative payment method,
-So that buyers have multiple payment options.
-
-**Acceptance Criteria:**
-
-**Given** the payment infrastructure from Story 4.3
-**When** I implement Momo integration
-**Then** MomoService creates payment request with partnerCode, accessKey, requestId, amount, orderInfo
-**Then** MomoService generates signature using HMAC SHA256
-**Then** MomoService submits payment request to Momo API
-**Then** MomoService receives payment URL and redirects user
-**Then** POST /api/payment/momo-callback endpoint receives Momo callbacks
-**Then** callback endpoint validates Momo signature
-**Then** callback endpoint verifies transaction status (0 = success)
-**Then** callback endpoint calls TransactionService.completeTransaction() on success
-**Then** callback endpoint returns HTTP 200 to Momo
-**Then** Momo configuration has partnerCode, accessKey, secretKey from application.yml
-**Then** payment flow works: create transaction → redirect to Momo → payment → callback → complete
-
-**Technical Notes:**
-- Follow Momo API documentation for partner integration
-- Implement signature validation carefully
-- Use requestId for idempotency
-- Handle both sandbox and production environments
-
-**Requirements:** FR44 (Momo webhook), FR45 (payment callback), FR23 (complete transaction)
-
----
-
-### Story 4.5: Transaction REST API
+### Story 4.4: Transaction REST API
 
 As a developer,
 I want to create REST endpoints for transaction management,
@@ -1336,7 +1334,7 @@ So that frontend can handle purchase flow via HTTP requests.
 
 **Acceptance Criteria:**
 
-**Given** the TransactionService and payment services from Stories 4.2-4.4
+**Given** the TransactionService and PayOSService from Stories 4.2-4.3
 **When** I create TransactionController
 **Then** POST /api/transactions/purchase accepts {accountId} in request body
 **Then** POST /api/transactions/purchase requires authentication
@@ -1363,19 +1361,19 @@ So that frontend can handle purchase flow via HTTP requests.
 
 ---
 
-### Story 4.6: Purchase Flow & Payment UI
+### Story 4.5: Purchase Flow & Payment UI
 
 As a developer,
-I want to create the purchase flow UI with payment options,
+I want to create the purchase flow UI with PayOS payment,
 So that buyers can complete transactions.
 
 **Acceptance Criteria:**
 
-**Given** the Transaction API from Story 4.5
+**Given** the Transaction API from Story 4.4
 **When** I create the purchase flow components
 **Then** AccountDetailPage has "Buy Now" button (opens PurchaseModal)
 **Then** PurchaseModal shows account details: title, price, seller info
-**Then** PurchaseModal shows payment method selection: VNPay, Momo
+**Then** PurchaseModal shows PayOS payment option (QR Code bank transfer)
 **Then** PurchaseModal has "Confirm Purchase" button
 **Then** PurchaseModal shows loading state during transaction creation
 **Then** PurchaseModal redirects to payment URL on success
@@ -1402,7 +1400,7 @@ So that buyers can complete transactions.
 
 ---
 
-### Story 4.7: Review System Backend
+### Story 4.6: Review System Backend
 
 As a developer,
 I want to implement ReviewService and REST endpoints for ratings,
@@ -1440,7 +1438,7 @@ So that users can rate and review sellers after transactions.
 
 ---
 
-### Story 4.8: Review UI Components
+### Story 4.7: Review UI Components
 
 As a developer,
 I want to create the review system UI,

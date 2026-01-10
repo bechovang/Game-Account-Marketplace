@@ -38,3 +38,17 @@ jwt:
 
 frontend:
   url: ${FRONTEND_URL:http://localhost:3000}
+
+# Encryption configuration for AES-256 credential encryption
+# Use environment variable in production! Generate with: openssl rand -hex 32
+encryption:
+  secret-key: ${ENCRYPTION_SECRET_KEY:00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF}
+
+# PayOS Payment Gateway Configuration
+payos:
+  client-id: ${PAYOS_CLIENT_ID:your-client-id}
+  api-key: ${PAYOS_API_KEY:your-api-key}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:your-checksum-key}
+  webhook-url: ${PAYOS_WEBHOOK_URL:https://your-domain.com/api/payment/payos-webhook}
+  return-url: ${PAYOS_RETURN_URL:http://localhost:3000/payment/success}
+  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:3000/payment/cancel}

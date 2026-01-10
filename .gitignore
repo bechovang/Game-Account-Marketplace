@@ -1,61 +1,278 @@
+###############################################################################
 # Java / Maven
+###############################################################################
 target/
 !.mvn/wrapper/maven-wrapper.jar
 .mvn/
 mvnw
 mvnw.cmd
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+.factorypath
+.apt_generated
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache/
 
-# Node / NPM
+###############################################################################
+# Node / NPM / Frontend
+###############################################################################
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
+.npm
+.eslintcache
+.stylelintcache
 
-# IDEs
+# Frontend build outputs
+dist/
+dist-ssr/
+build/
+*.local
+
+# Vite
+.vite/
+
+###############################################################################
+# IDEs & Editors
+###############################################################################
 .idea/
 .idea_modules/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VSCode
 .vscode/
+*.code-workspace
+
+# Cursor
 .cursor/
+
+# Vim
 *.swp
 *.swo
 *~
+.*.swp
+.*.swo
 
-# Environment
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+###############################################################################
+# Environment & Secrets (CRITICAL - NEVER COMMIT!)
+###############################################################################
 .env
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
+.env.staging
+.env.*.local
 
+# Spring Boot environment-specific configs with secrets
+application-dev.yml
+application-dev.properties
+application-prod.yml
+application-prod.properties
+application-staging.yml
+application-staging.properties
+application-local.yml
+application-local.properties
+*-local.yml
+*-local.properties
+
+# PayOS keys and credentials
+keypayos*
+*payos*.key
+*payos*.pem
+payos_credentials.json
+payos_secrets.*
+docs/payos_docs/
+payos_docs/
+**/payos_docs/
+
+# Other secrets
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+secrets/
+credentials/
+private/
+
+# JWT secrets
+jwt.secret
+*.jwt
+
+# Database credentials
+database.properties
+db-credentials.*
+
+###############################################################################
 # Logs
+###############################################################################
 *.log
 logs/
+*.log.*
+backend.log
+frontend.log
+error.log
+access.log
+app.log
 
-# OS
+###############################################################################
+# Operating System
+###############################################################################
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
 nul
 
-# Build outputs
-dist/
-build/
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
 
-# Docker
-.dockerignore
-
-# uploads (will be created later)
+###############################################################################
+# Uploads & User-Generated Content
+###############################################################################
 uploads/
+upload/
+files/
+user-uploads/
+*.uploaded
 
-# Claude / AI output
+###############################################################################
+# Testing
+###############################################################################
+coverage/
+*.coverage
+.nyc_output
+.cache/
+junit.xml
+test-results/
+playwright-report/
+test-output/
+
+###############################################################################
+# Docker & Containers
+###############################################################################
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+###############################################################################
+# Database
+###############################################################################
+*.db
+*.sqlite
+*.sqlite3
+*.sql.backup
+*.dump
+db-backup/
+database-backup/
+
+###############################################################################
+# Redis
+###############################################################################
+dump.rdb
+*.rdb
+appendonly.aof
+
+###############################################################################
+# AI Tools & Documentation Generation
+###############################################################################
 .claude/cache/
 .claude/history/
+.claude/settings.local.json
 _bmad-output/
 
-# Temp files
+###############################################################################
+# Temporary Files
+###############################################################################
 *.tmp
 *.temp
 *.cache
+*.bak
+*.backup
+*.swp
+*.swo
+*.orig
+*.rej
+*.diff
+*.patch
 
-# Background task outputs
+###############################################################################
+# Background Processes
+###############################################################################
 *.pid
+*.seed
+*.pid.lock
+
+###############################################################################
+# Package Manager Locks (Optional - Team Decision)
+###############################################################################
+# Uncomment if your team doesn't want to commit lock files
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+###############################################################################
+# Miscellaneous
+###############################################################################
+.history/
+.git-blame-ignore-revs
