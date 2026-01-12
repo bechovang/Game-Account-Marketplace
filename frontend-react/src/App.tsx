@@ -15,6 +15,8 @@ import CreateListingPage from './pages/CreateListingPage';
 import EditListingPage from './pages/EditListingPage';
 import MyListingsPage from './pages/MyListingsPage';
 import AccountDetailPage from './pages/account/AccountDetailPage';
+import PurchasePage from './components/purchase/PurchasePage';
+import TransactionHistoryPage from './components/purchase/TransactionHistoryPage';
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -28,6 +30,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  console.log('🚀 App component rendering...');
   return (
     <ApolloProvider client={apolloClient}>
       <AuthProvider>
@@ -112,6 +115,30 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <AccountDetailPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Purchase Success Page */}
+            <Route
+              path="/payment/success"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <PurchasePage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Transaction History Page */}
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <TransactionHistoryPage />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -52,7 +52,20 @@ public class PayOSWebhookRequest {
         private String status;
 
         /**
-         * Transaction description.
+         * PayOS response code: 00 = success (PAID), other codes = pending/failed.
+         * This is the primary field PayOS sends in webhooks.
+         */
+        @JsonProperty("code")
+        private String code;
+
+        /**
+         * PayOS result description: "Thành công" (success), "Thất bại" (failed), etc.
+         */
+        @JsonProperty("desc")
+        private String payosResult;
+
+        /**
+         * Transaction description (e.g., "Buy game account").
          */
         @JsonProperty("description")
         private String description;
@@ -96,12 +109,25 @@ public class PayOSWebhookRequest {
 
     /**
      * Gets the payment status as uppercase string.
+     * PayOS sends code=00 for successful payments, not status=PAID.
      * @return Payment status (PENDING, PAID, CANCELLED, EXPIRED)
      */
     public String getPaymentStatus() {
-        return data != null && data.getStatus() != null
-            ? data.getStatus().toUpperCase()
-            : "UNKNOWN";
+        if (data == null) {
+            return "UNKNOWN";
+        }
+
+        // PayOS webhook sends code=00 for successful payment
+        if ("00".equals(data.getCode())) {
+            return "PAID";
+        }
+
+        // Fall back to status field if present
+        if (data.getStatus() != null) {
+            return data.getStatus().toUpperCase();
+        }
+
+        return "UNKNOWN";
     }
 
     /**

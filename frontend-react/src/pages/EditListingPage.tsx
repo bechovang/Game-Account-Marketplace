@@ -6,7 +6,7 @@ import * as yup from 'yup';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 import { useAccount, useGames, useUpdateAccount } from '../hooks/use-graphql';
-import { AccountStatus } from '../types/graphql';
+import type { AccountStatus } from '../types/graphql';
 import type { UpdateAccountInput } from '../types/graphql';
 
 /**

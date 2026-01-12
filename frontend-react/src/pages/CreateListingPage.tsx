@@ -19,6 +19,8 @@ const schema = yup.object({
   rank: yup.string().optional(),
   price: yup.number().required('Price is required').positive('Price must be positive'),
   images: yup.array().min(1, 'At least one image is required').max(5, 'Maximum 5 images allowed').required('Images are required'),
+  username: yup.string().required('Game username is required').min(3, 'Username must be at least 3 characters').max(100, 'Username must be less than 100 characters'),
+  password: yup.string().required('Game password is required').min(6, 'Password must be at least 6 characters').max(100, 'Password must be less than 100 characters'),
 });
 
 /**
@@ -48,6 +50,8 @@ const CreateListingPage = () => {
       rank: '',
       price: 0,
       images: [],
+      username: '',
+      password: '',
     },
   });
 
@@ -118,6 +122,8 @@ const CreateListingPage = () => {
         title: data.title,
         price: data.price,
         images: data.images.length > 0 ? data.images : ['https://placeholder.example.com/default.jpg'],
+        username: data.username,
+        password: data.password,
         // Only include optional fields if they have values
         ...(data.description && { description: data.description }),
         ...(data.level && { level: data.level }),
@@ -315,6 +321,48 @@ const CreateListingPage = () => {
             </div>
           )}
           {errors.images && <p className="mt-1 text-sm text-red-600">{errors.images.message}</p>}
+        </div>
+
+        {/* Game Credentials */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">Game Account Credentials</h3>
+          <p className="text-sm text-blue-700 mb-4">
+            These credentials will be securely encrypted and shown to the buyer after payment completion.
+          </p>
+
+          <div className="space-y-4">
+            {/* Username */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                Game Username <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="username"
+                {...register('username')}
+                placeholder="e.g., gamer123"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={creating}
+              />
+              {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Game Password <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                id="password"
+                {...register('password')}
+                placeholder="Enter the game account password"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={creating}
+              />
+              {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+            </div>
+          </div>
         </div>
 
         {/* Submit Buttons */}

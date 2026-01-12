@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_ACCOUNT } from '../../services/graphql/queries';
@@ -7,14 +7,19 @@ import ImageGallery from '../../components/account/ImageGallery';
 import SellerCard from '../../components/account/SellerCard';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import ErrorMessage from '../../components/common/ErrorMessage';
+import PurchaseModal from '../../components/purchase/PurchaseModal';
 import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
+import { ShoppingCart } from 'lucide-react';
 
 interface AccountDetailPageProps {}
 
 const AccountDetailPage: React.FC<AccountDetailPageProps> = () => {
   const { accountId } = useParams<{ accountId: string }>();
   const incrementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const { user } = useAuth();
 
   // GraphQL query for account details
   const { data, loading, error } = useQuery(GET_ACCOUNT, {
@@ -157,16 +162,34 @@ const AccountDetailPage: React.FC<AccountDetailPageProps> = () => {
               </span>
             </div>
           </div>
-          {/* Game info */}
-          <div className="mt-4 md:mt-0 text-right">
+          {/* Game info and Buy Now button */}
+          <div className="mt-4 md:mt-0 flex flex-col items-end gap-3">
             {account.game?.iconUrl && (
               <img
                 src={account.game.iconUrl}
                 alt={account.game.name}
-                className="w-16 h-16 rounded inline-block"
+                className="w-16 h-16 rounded"
               />
             )}
-            <p className="mt-1 text-sm text-gray-600">{account.game?.name || 'Unknown Game'}</p>
+            <p className="text-sm text-gray-600">{account.game?.name || 'Unknown Game'}</p>
+            {/* Buy Now Button */}
+            {account.status === 'APPROVED' && (
+              <button
+                onClick={() => setIsPurchaseModalOpen(true)}
+                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold shadow-md"
+              >
+                <ShoppingCart size={20} />
+                Buy Now
+              </button>
+            )}
+            {!user && (
+              <p className="text-sm text-gray-500">
+                <a href="/login" className="text-blue-600 hover:underline">Login</a> to purchase
+              </p>
+            )}
+            {user && user.id === parseInt(account.seller.id) && (
+              <p className="text-sm text-gray-500">You cannot purchase your own account</p>
+            )}
           </div>
         </div>
       </div>
@@ -188,6 +211,13 @@ const AccountDetailPage: React.FC<AccountDetailPageProps> = () => {
         account={account}
         onFavoriteToggle={handleFavoriteToggle}
         isFavorited={account.isFavorited || false}
+      />
+
+      {/* Purchase Modal */}
+      <PurchaseModal
+        isOpen={isPurchaseModalOpen}
+        onClose={() => setIsPurchaseModalOpen(false)}
+        account={account}
       />
     </div>
   );

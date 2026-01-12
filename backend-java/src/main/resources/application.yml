@@ -45,10 +45,11 @@ encryption:
   secret-key: ${ENCRYPTION_SECRET_KEY:00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF}
 
 # PayOS Payment Gateway Configuration
+# IMPORTANT: Use environment variables in production!
 payos:
-  client-id: ${PAYOS_CLIENT_ID:your-client-id}
-  api-key: ${PAYOS_API_KEY:your-api-key}
-  checksum-key: ${PAYOS_CHECKSUM_KEY:your-checksum-key}
-  webhook-url: ${PAYOS_WEBHOOK_URL:https://your-domain.com/api/payment/payos-webhook}
+  client-id: ${PAYOS_CLIENT_ID:f716457a-32fd-462a-9fe4-40277490f190}
+  api-key: ${PAYOS_API_KEY:3abfa561-0d34-4e8b-a524-a05f05b602f7}
+  checksum-key: ${PAYOS_CHECKSUM_KEY:73013e50e4d987c2e574faef1c7a1aed503a397b1ce52c25cad07f65927b89c7}
+  webhook-url: ${PAYOS_WEBHOOK_URL:https://receipt-seriously-function-framework.trycloudflare.com/api/payment/payos-webhook}
   return-url: ${PAYOS_RETURN_URL:http://localhost:3000/payment/success}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:3000/payment/cancel}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useDeleteAccount } from '../hooks/use-graphql';
-import { AccountStatus } from '../types/graphql';
+import type { AccountStatus } from '../types/graphql';
 import DeleteAccountModal from '../components/modals/DeleteAccountModal';
 import { apiClient } from '../services/rest/axiosInstance';
 

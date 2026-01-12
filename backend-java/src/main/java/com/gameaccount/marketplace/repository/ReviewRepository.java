@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
@@ -16,6 +17,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByReviewerId(Long reviewerId);
 
     boolean existsByReviewerIdAndTargetUserId(Long reviewerId, Long targetUserId);
+
+    Optional<Review> findByReviewerIdAndTargetUserId(Long reviewerId, Long targetUserId);
 
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.targetUser.id = :targetUserId")
     Double calculateAverageRating(@Param("targetUserId") Long targetUserId);

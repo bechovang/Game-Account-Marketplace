@@ -49,6 +49,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final AccountRepository accountRepository;
     private final FavoriteRepository favoriteRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EncryptionUtil encryptionUtil;
 
     // Configuration
     private static final int TARGET_USERS = 100;
@@ -237,6 +238,10 @@ public class DatabaseSeeder implements CommandLineRunner {
                 User seller = allUsers.get(random.nextInt(allUsers.size()));
                 Game game = allGames.get(random.nextInt(allGames.size()));
 
+                // Generate fake game credentials
+                String fakeUsername = "gameuser" + (i + batch * BATCH_SIZE) + faker.random().nextInt(1000, 9999);
+                String fakePassword = "pass" + faker.random().nextInt(100000, 999999);
+
                 Account account = Account.builder()
                         .seller(seller)
                         .game(game)
@@ -249,6 +254,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .viewsCount(random.nextInt(1000))
                         .isFeatured(random.nextDouble() < FEATURED_RATIO)
                         .images(generateImageUrls())
+                        .encryptedUsername(encryptionUtil.encrypt(fakeUsername))
+                        .encryptedPassword(encryptionUtil.encrypt(fakePassword))
                         .createdAt(generatePastDate(365))
                         .build();
 

@@ -7,6 +7,7 @@ import com.gameaccount.marketplace.dto.response.TransactionResponse;
 import com.gameaccount.marketplace.entity.Transaction;
 import com.gameaccount.marketplace.entity.User;
 import com.gameaccount.marketplace.exception.BusinessException;
+import com.gameaccount.marketplace.repository.UserRepository;
 import com.gameaccount.marketplace.service.PayOSService;
 import com.gameaccount.marketplace.service.TransactionService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class TransactionController {
 
     private final TransactionService transactionService;
     private final PayOSService payOSService;
+    private final UserRepository userRepository;
 
     /**
      * Purchase a game account.
@@ -56,8 +58,7 @@ public class TransactionController {
         // Purchase account (creates PENDING transaction)
         Transaction transaction = transactionService.purchaseAccount(
             request.getAccountId(),
-            buyerId,
-            request.getCredentials()
+            buyerId
         );
 
         // Create payment link
@@ -200,17 +201,16 @@ public class TransactionController {
 
     /**
      * Extracts user ID from Spring Security UserDetails.
-     * Assumes username contains the user ID as string.
+     * The JWT username contains the email, so we look up the user by email to get the ID.
      *
      * @param userDetails Spring Security UserDetails
      * @return User ID as Long
      */
     private Long getUserIdFromUserDetails(org.springframework.security.core.userdetails.User userDetails) {
-        try {
-            return Long.parseLong(userDetails.getUsername());
-        } catch (NumberFormatException e) {
-            throw new BusinessException("Invalid user ID in authentication token");
-        }
+        String email = userDetails.getUsername();
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new BusinessException("User not found: " + email));
     }
 
     /**

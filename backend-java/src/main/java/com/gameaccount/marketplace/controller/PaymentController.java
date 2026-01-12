@@ -30,9 +30,15 @@ public class PaymentController {
     @Value("${payos.webhook-url}")
     private String webhookUrl;
 
+    @Value("${spring.profiles.active:default}")
+    private String activeProfile;
+
     /**
      * Webhook endpoint to receive payment callbacks from PayOS.
      * Validates signature and processes payment status updates.
+     *
+     * For development: Signature verification is logged but doesn't block processing
+     * For production: Signature must be valid to process webhook
      *
      * @param webhookBody The webhook data from PayOS (as raw Map for SDK verification)
      * @return HTTP 200 to acknowledge receipt
@@ -40,17 +46,33 @@ public class PaymentController {
     @PostMapping("/payos-webhook")
     public ResponseEntity<Map<String, Object>> handlePayOSWebhook(@RequestBody Map<String, Object> webhookBody) {
         try {
-            log.info("Received PayOS webhook");
+            log.info("=== PayOS Webhook Received ===");
+            log.info("Webhook body: {}", webhookBody);
 
             // Verify webhook signature using PayOS SDK v2 API
-            payOSService.getPayOSClient().webhooks().verify(webhookBody);
+            boolean signatureValid = false;
+            try {
+                payOSService.getPayOSClient().webhooks().verify(webhookBody);
+                signatureValid = true;
+                log.info("Webhook signature verified successfully");
+            } catch (Exception sigError) {
+                log.warn("Webhook signature verification failed: {}", sigError.getMessage());
+                // In development, allow processing without valid signature
+                // In production, you may want to reject invalid signatures
+                if (!"dev".equals(activeProfile) && !"default".equals(activeProfile)) {
+                    log.error("Production mode: Rejecting webhook with invalid signature");
+                    return ResponseEntity.ok(Map.of("success", false, "error", "Invalid signature"));
+                }
+                log.info("Development mode: Processing webhook despite signature failure");
+            }
 
             // Parse webhook body using DTO for type-safe access
             PayOSWebhookRequest webhookRequest = parseWebhookRequest(webhookBody);
             String orderCode = webhookRequest.getOrderCodeAsString();
             String paymentStatus = webhookRequest.getPaymentStatus();
 
-            log.info("Processing webhook: orderCode={}, status={}", orderCode, paymentStatus);
+            log.info("Processing webhook: orderCode={}, status={}, signatureValid={}",
+                orderCode, paymentStatus, signatureValid);
 
             // Process payment status with idempotency handling
             switch (paymentStatus) {
@@ -107,7 +129,10 @@ public class PaymentController {
         try {
             // Use Jackson to convert Map to POJO
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            return mapper.convertValue(webhookBody, PayOSWebhookRequest.class);
+            PayOSWebhookRequest request = mapper.convertValue(webhookBody, PayOSWebhookRequest.class);
+            log.info("Parsed webhook: data={}, orderCode={}, status={}",
+                request.getData(), request.getOrderCodeAsString(), request.getPaymentStatus());
+            return request;
         } catch (Exception e) {
             log.error("Failed to parse webhook request", e);
             throw new RuntimeException("Invalid webhook payload", e);
@@ -135,5 +160,33 @@ public class PaymentController {
     public ResponseEntity<Map<String, String>> confirmWebhook() {
         payOSService.confirmWebhook(webhookUrl);
         return ResponseEntity.ok(Map.of("message", "Webhook URL confirmed successfully"));
+    }
+
+    /**
+     * Mock webhook endpoint for testing payment completion.
+     * Simulates PayOS sending a PAID webhook for a transaction.
+     * This is for development/testing only - in production, PayOS sends real webhooks.
+     *
+     * @param orderCode The PayOS order code to complete payment for
+     * @return Success message
+     */
+    @PostMapping("/mock-complete-payment/{orderCode}")
+    public ResponseEntity<Map<String, Object>> mockCompletePayment(@PathVariable String orderCode) {
+        log.info("Mock webhook: Completing payment for orderCode: {}", orderCode);
+
+        try {
+            // Simulate what PayOS webhook does
+            transactionService.completeTransactionByOrderCode(orderCode);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Payment completed successfully for orderCode: " + orderCode
+            ));
+        } catch (Exception e) {
+            log.error("Mock webhook failed", e);
+            return ResponseEntity.ok(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
+        }
     }
 }

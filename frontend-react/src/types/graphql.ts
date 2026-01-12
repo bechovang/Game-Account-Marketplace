@@ -85,6 +85,8 @@ export interface CreateAccountInput {
   rank?: string;
   price: number;
   images: string[];
+  username: string;
+  password: string;
 }
 
 export interface UpdateAccountInput {

@@ -14,6 +14,7 @@ import com.gameaccount.marketplace.repository.FavoriteRepository;
 import com.gameaccount.marketplace.repository.GameRepository;
 import com.gameaccount.marketplace.repository.UserRepository;
 import com.gameaccount.marketplace.spec.AccountSpecification;
+import com.gameaccount.marketplace.util.EncryptionUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,7 @@ public class AccountService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
+    private final EncryptionUtil encryptionUtil;
 
     /** Allowed sort fields for account search */
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("price", "level", "createdAt");
@@ -91,6 +93,8 @@ public class AccountService {
                 .rank(request.getRank())
                 .price(request.getPrice())
                 .images(request.getImages())
+                .encryptedUsername(encryptionUtil.encrypt(request.getUsername()))
+                .encryptedPassword(encryptionUtil.encrypt(request.getPassword()))
                 .status(AccountStatus.PENDING)
                 .viewsCount(0)
                 .isFeatured(false)

@@ -78,15 +78,15 @@ development_status:
   epic-3-retrospective: done
 
   # Epic 4: Secure Transactions (7 stories)
-  epic-4: in-progress
+  epic-4: done
   4-1-transaction-review-entities: done
   4-2-transactionservice-encryption: done
   4-3-payment-gateway-payos-integration: done
   4-4-transaction-rest-api: done
-  4-5-purchase-flow-payment-ui: backlog
-  4-6-review-system-backend: backlog
-  4-7-review-ui-components: backlog
-  epic-4-retrospective: optional
+  4-5-purchase-flow-payment-ui: done
+  4-6-review-system-backend: done
+  4-7-review-ui-components: done
+  epic-4-retrospective: done
 
   # Epic 5: Real-time Communication (8 stories)
   epic-5: backlog

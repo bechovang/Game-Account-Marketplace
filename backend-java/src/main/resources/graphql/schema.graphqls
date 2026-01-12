@@ -110,6 +110,8 @@ input CreateAccountInput {
     rank: String
     price: Float!
     images: [String!]!
+    username: String!
+    password: String!
 }
 
 input UpdateAccountInput {

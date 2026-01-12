@@ -54,6 +54,11 @@ public class PayOSService {
         // Generate unique order code (timestamp + random suffix prevents race condition)
         String orderCode = generateOrderCode();
 
+        // Store order code in transaction BEFORE calling PayOS API
+        // This ensures orderCode is always available for webhook reconciliation
+        transaction.setOrderCode(orderCode);
+        transactionRepository.save(transaction);
+
         // Create item data for payment
         PaymentLinkItem itemData = PaymentLinkItem.builder()
             .name("Game Account: " + transaction.getAccount().getTitle())
@@ -65,7 +70,7 @@ public class PayOSService {
         CreatePaymentLinkRequest paymentData = CreatePaymentLinkRequest.builder()
             .orderCode(Long.parseLong(orderCode))
             .amount(transaction.getAmount().longValue())
-            .description("Payment for game account: " + transaction.getAccount().getTitle())
+            .description("Buy game account") // Max 25 characters for PayOS
             .item(itemData)
             .cancelUrl(cancelUrl)
             .returnUrl(returnUrl)
@@ -74,10 +79,6 @@ public class PayOSService {
         try {
             // Create payment link via PayOS v2 API
             CreatePaymentLinkResponse response = payOSClient.paymentRequests().create(paymentData);
-
-            // Store order code in transaction for reconciliation
-            transaction.setOrderCode(orderCode);
-            transactionRepository.save(transaction);
 
             log.info("Payment link created: orderCode={}, checkoutUrl={}",
                 orderCode, response.getCheckoutUrl());
@@ -90,7 +91,7 @@ public class PayOSService {
 
         } catch (Exception e) {
             log.error("Failed to create PayOS payment link", e);
-            throw new RuntimeException("Failed to create payment link", e);
+            throw new RuntimeException("Failed to create payment link: " + e.getMessage(), e);
         }
     }
 
@@ -135,12 +136,14 @@ public class PayOSService {
 
     /**
      * Generates unique order code for PayOS transaction.
-     * Format: timestamp in milliseconds + 4-digit random suffix
-     * This prevents race conditions from concurrent requests.
+     * Format: timestamp in seconds + 5-digit random suffix
+     * This prevents race conditions from concurrent requests while staying
+     * within JavaScript's MAX_SAFE_INTEGER (9007199254740991).
      */
     private String generateOrderCode() {
-        long timestamp = System.currentTimeMillis();
-        int random = (int) (Math.random() * 9000) + 1000; // 1000-9999
-        return String.valueOf(timestamp) + random;
+        long timestampSeconds = System.currentTimeMillis() / 1000; // Convert to seconds (10 digits)
+        int random = (int) (Math.random() * 90000) + 10000; // 5-digit suffix (10000-99999)
+        long orderCode = timestampSeconds * 100000L + random; // Combine: timestamp + random suffix
+        return String.valueOf(orderCode);
     }
 }

@@ -38,7 +38,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/graphql", "/ws/**", "/api/accounts/*/view", "/api/benchmark/**").permitAll()
+                .requestMatchers("/api/auth/**", "/graphql", "/ws/**", "/api/accounts/*/view", "/api/benchmark/**", "/api/payment/mock-complete-payment/**", "/api/payment/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

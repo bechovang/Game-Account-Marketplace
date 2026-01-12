@@ -91,6 +91,13 @@ public class Account {
     @Builder.Default
     private List<String> images = new ArrayList<>();
 
+    // Encrypted game credentials for the buyer
+    @Column(name = "encrypted_username", length = 500)
+    private String encryptedUsername;
+
+    @Column(name = "encrypted_password", length = 500)
+    private String encryptedPassword;
+
     public enum AccountStatus {
         PENDING, APPROVED, REJECTED, SOLD
     }

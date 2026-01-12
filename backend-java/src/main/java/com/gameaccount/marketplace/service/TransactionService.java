@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Service layer for transaction management and credential security.
@@ -51,24 +50,25 @@ public class TransactionService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
+     * Pending transactions expire after 5 minutes.
+     * This allows retry if payment fails or user abandons checkout.
+     */
+    private static final int TRANSACTION_TIMEOUT_MINUTES = 5;
+
+    /**
      * Creates a new purchase transaction for an account.
-     * Validates account availability, encrypts credentials, and stores transaction with PENDING status.
+     * Validates account availability and stores transaction with PENDING status.
+     * Credentials are stored in the Account entity, not in Transaction.
      *
      * @param accountId The ID of the account being purchased
      * @param buyerId The ID of the user making the purchase
-     * @param credentials Map containing account credentials (username, password)
      * @return The created Transaction entity
      * @throws ResourceNotFoundException if account or buyer not found
      * @throws BusinessException if account not available or buyer is seller
      */
     @Transactional
-    public Transaction purchaseAccount(Long accountId, Long buyerId, Map<String, String> credentials) {
+    public Transaction purchaseAccount(Long accountId, Long buyerId) {
         log.info("Initiating purchase: accountId={}, buyerId={}", accountId, buyerId);
-
-        // Validate input parameters
-        if (credentials == null) {
-            throw new BusinessException("Credentials are required");
-        }
 
         // Validate account exists
         Account account = accountRepository.findById(accountId)
@@ -91,63 +91,82 @@ public class TransactionService {
             throw new BusinessException("You cannot purchase your own account");
         }
 
-        // Check for duplicate purchase
-        if (transactionRepository.existsByBuyerIdAndAccountId(buyerId, accountId)) {
-            log.warn("Duplicate purchase attempt: buyerId={}, accountId={}", buyerId, accountId);
-            throw new BusinessException("You have already purchased this account");
+        // Auto-cancel expired pending transactions before checking for duplicates
+        LocalDateTime expirationTime = LocalDateTime.now().minusMinutes(TRANSACTION_TIMEOUT_MINUTES);
+        List<Transaction> expiredTransactions = transactionRepository.findPendingOlderThan(
+            buyerId, accountId, expirationTime);
+
+        if (!expiredTransactions.isEmpty()) {
+            log.info("Auto-cancelling {} expired pending transaction(s) for buyerId={}, accountId={}",
+                expiredTransactions.size(), buyerId, accountId);
+            for (Transaction expired : expiredTransactions) {
+                expired.setStatus(TransactionStatus.CANCELLED);
+                transactionRepository.save(expired);
+            }
         }
 
-        // Extract and validate credentials
-        String username = credentials.get("username");
-        String password = credentials.get("password");
+        // Check for existing transaction with detailed status message
+        List<Transaction> existingTransactions = transactionRepository.findByBuyerIdAndAccountId(buyerId, accountId);
+        if (!existingTransactions.isEmpty()) {
+            Transaction existing = existingTransactions.get(0); // Get most recent
 
-        if (username == null || username.trim().isEmpty()) {
-            throw new BusinessException("Username is required");
+            switch (existing.getStatus()) {
+                case PENDING:
+                    log.warn("Pending transaction exists: buyerId={}, accountId={}, transactionId={}",
+                        buyerId, accountId, existing.getId());
+                    throw new BusinessException(
+                        "You have a pending purchase for this account. " +
+                        "Please complete the payment or wait for it to expire (30 minutes). " +
+                        "Transaction ID: " + existing.getId()
+                    );
+
+                case COMPLETED:
+                    log.warn("Already purchased: buyerId={}, accountId={}, transactionId={}",
+                        buyerId, accountId, existing.getId());
+                    throw new BusinessException(
+                        "You have already purchased this account on " +
+                        existing.getCompletedAt().toLocalDate() +
+                        ". Transaction ID: " + existing.getId()
+                    );
+
+                case CANCELLED:
+                    // Allow new purchase if previous transaction was cancelled
+                    log.info("Previous transaction cancelled, allowing new purchase: transactionId={}", existing.getId());
+                    break;
+
+                default:
+                    log.warn("Unexpected transaction status: {}", existing.getStatus());
+                    throw new BusinessException(
+                        "Unable to process purchase. Transaction ID: " + existing.getId() +
+                        " has status: " + existing.getStatus()
+                    );
+            }
         }
-        if (password == null || password.trim().isEmpty()) {
-            throw new BusinessException("Password is required");
-        }
 
-        // Trim credentials before storing
-        username = username.trim();
-        password = password.trim();
+        // Create transaction (no credentials stored here - they're in Account)
+        Transaction transaction = Transaction.builder()
+            .account(account)
+            .buyer(userRepository.getById(buyerId))
+            .seller(account.getSeller())
+            .amount(account.getPrice())
+            .status(TransactionStatus.PENDING)
+            .build();
 
-        // Create credentials JSON using Jackson (prevents injection)
-        try {
-            Map<String, String> credentialsMap = Map.of("username", username, "password", password);
-            String credentialsJson = objectMapper.writeValueAsString(credentialsMap);
+        Transaction saved = transactionRepository.save(transaction);
+        log.info("Transaction created: id={}, accountId={}, buyerId={}, amount={}",
+            saved.getId(), accountId, buyerId, account.getPrice());
 
-            // Encrypt credentials before storing
-            String encryptedCredentials = encryptionUtil.encrypt(credentialsJson);
-
-            // Create transaction
-            Transaction transaction = Transaction.builder()
-                .account(account)
-                .buyer(userRepository.getById(buyerId))
-                .seller(account.getSeller())
-                .amount(account.getPrice())
-                .status(TransactionStatus.PENDING)
-                .encryptedCredentials(encryptedCredentials)
-                .build();
-
-            Transaction saved = transactionRepository.save(transaction);
-            log.info("Transaction created: id={}, accountId={}, buyerId={}, amount={}",
-                saved.getId(), accountId, buyerId, account.getPrice());
-
-            return saved;
-        } catch (Exception e) {
-            log.error("Failed to process transaction", e);
-            throw new BusinessException("Failed to create transaction", e);
-        }
+        return saved;
     }
 
     /**
-     * Completes a transaction and returns decrypted credentials to the buyer.
+     * Completes a transaction and returns decrypted account credentials to the buyer.
      * Only the buyer or an admin can complete a transaction.
+     * Credentials are retrieved from the Account entity, not from Transaction.
      *
      * @param transactionId The ID of the transaction to complete
      * @param requesterId The ID of the user requesting completion
-     * @return CredentialsResponse containing decrypted username and password
+     * @return CredentialsResponse containing decrypted username and password from Account
      * @throws ResourceNotFoundException if transaction not found
      * @throws BusinessException if transaction not in PENDING status or requester not authorized
      */
@@ -178,20 +197,36 @@ public class TransactionService {
             }
         }
 
-        // Decrypt and parse credentials using Jackson
-        try {
-            String decryptedCredentials = encryptionUtil.decrypt(transaction.getEncryptedCredentials());
-            JsonNode credentialsJson = objectMapper.readTree(decryptedCredentials);
+        // Get account from transaction
+        Account account = transaction.getAccount();
 
-            String username = credentialsJson.get("username").asText();
-            String password = credentialsJson.get("password").asText();
+        // Decrypt credentials from Account entity
+        // If credentials are not set (demo accounts), generate placeholder credentials
+        try {
+            String username;
+            String password;
+
+            // Check if account has encrypted credentials
+            if (account.getEncryptedUsername() != null && !account.getEncryptedUsername().isEmpty()) {
+                username = encryptionUtil.decrypt(account.getEncryptedUsername());
+                password = encryptionUtil.decrypt(account.getEncryptedPassword());
+            } else {
+                // Demo account - generate placeholder credentials
+                log.warn("Account has no encrypted credentials, using placeholder for demo: accountId={}", account.getId());
+                username = "demo_user_" + account.getId();
+                password = "demo_pass_" + account.getId();
+            }
 
             // Update transaction status
             transaction.setStatus(TransactionStatus.COMPLETED);
             transaction.setCompletedAt(LocalDateTime.now());
             transactionRepository.save(transaction);
 
-            log.info("Transaction completed: id={}, buyerId={}", transactionId, requesterId);
+            // Also mark account as sold
+            account.setStatus(AccountStatus.SOLD);
+            accountRepository.save(account);
+
+            log.info("Transaction completed: id={}, buyerId={}, accountId={}", transactionId, requesterId, account.getId());
 
             return new CredentialsResponse(username, password);
         } catch (Exception e) {
