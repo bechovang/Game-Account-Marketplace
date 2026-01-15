@@ -238,6 +238,34 @@ public class AccountController {
     }
 
     /**
+     * Get seller info for an account.
+     * Used by chat to start new conversations.
+     * Public endpoint - no authentication required.
+     *
+     * @param id Account ID
+     * @return Seller info (id, email, fullName)
+     */
+    @GetMapping("/{id}/seller-info")
+    @Operation(summary = "Get account seller info", description = "Get seller information for an account")
+    public ResponseEntity<Map<String, Object>> getSellerInfo(
+            @Parameter(description = "Account ID", required = true)
+            @PathVariable Long id
+    ) {
+        log.debug("GET /api/accounts/{}/seller-info", id);
+
+        // Get account without incrementing views
+        Account account = accountService.getAccountByIdWithoutIncrement(id);
+
+        // Build response with seller info
+        Map<String, Object> response = new HashMap<>();
+        response.put("sellerId", account.getSeller().getId());
+        response.put("sellerEmail", account.getSeller().getEmail());
+        response.put("sellerFullName", account.getSeller().getFullName());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Search accounts with filters and pagination.
      * Public endpoint - no authentication required.
      * Results are cached for 10 minutes.

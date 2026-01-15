@@ -52,6 +52,8 @@ public class AccountMutation {
                 .rank(input.getRank())
                 .price(input.getPrice())
                 .images(input.getImages())
+                .username(input.getUsername())
+                .password(input.getPassword())
                 .build();
 
         // Delegate to service layer

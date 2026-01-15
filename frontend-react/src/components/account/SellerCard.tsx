@@ -1,4 +1,6 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SellerCardProps {
   seller: {
@@ -22,6 +24,25 @@ const SellerCard: React.FC<SellerCardProps> = ({
   onFavoriteToggle,
   isFavorited
 }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleChatClick = () => {
+    if (!user) {
+      // If not logged in, redirect to login
+      navigate('/login');
+      return;
+    }
+
+    // If the user is the seller, show a message
+    if (user.id === seller.id) {
+      alert('You cannot chat with yourself!');
+      return;
+    }
+
+    // Navigate to chat page with this account as a query parameter
+    navigate(`/chat?accountId=${account.id}`);
+  };
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center mb-4">
@@ -44,6 +65,7 @@ const SellerCard: React.FC<SellerCardProps> = ({
       {/* Action Buttons */}
       <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
         <button
+          onClick={handleChatClick}
           className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
         >
           Chat with Seller

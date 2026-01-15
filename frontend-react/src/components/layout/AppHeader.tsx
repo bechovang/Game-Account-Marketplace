@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Heart, User, Settings, LogOut, Menu, X } from 'lucide-react';
+import { Search, Heart, MessageSquare, User, Settings, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { NotificationBell } from '@/components/notifications';
 import { cn } from '@/lib/utils';
 
 interface AppHeaderProps {
@@ -102,6 +103,19 @@ const AppHeader: React.FC<AppHeaderProps> = ({ className }) => {
 
         {/* Right Actions */}
         <div className="flex items-center justify-end space-x-2">
+          {/* Notifications Bell */}
+          {user && <NotificationBell />}
+
+          {/* Messages Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/chat')}
+            aria-label="Messages"
+          >
+            <MessageSquare className="h-5 w-5" />
+          </Button>
+
           {/* Favorites Button */}
           <Button
             variant="ghost"

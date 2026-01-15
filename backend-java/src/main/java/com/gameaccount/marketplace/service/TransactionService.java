@@ -46,6 +46,7 @@ public class TransactionService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final EncryptionUtil encryptionUtil;
+    private final NotificationService notificationService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -155,6 +156,9 @@ public class TransactionService {
         Transaction saved = transactionRepository.save(transaction);
         log.info("Transaction created: id={}, accountId={}, buyerId={}, amount={}",
             saved.getId(), accountId, buyerId, account.getPrice());
+
+        // Send notification to seller about new transaction
+        notificationService.sendNewTransactionNotification(account.getSeller().getId(), saved.getId());
 
         return saved;
     }

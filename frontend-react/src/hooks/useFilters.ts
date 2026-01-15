@@ -43,7 +43,7 @@ export const useFilters = (): UseFiltersResult => {
       minLevel: searchParams.get('minLevel') ? Number(searchParams.get('minLevel')) : undefined,
       maxLevel: searchParams.get('maxLevel') ? Number(searchParams.get('maxLevel')) : undefined,
       rank: searchParams.get('rank') || undefined,
-      status: searchParams.get('status') || DEFAULT_STATUS,
+      status: searchParams.get('status') || undefined,
       sortBy: searchParams.get('sortBy') || DEFAULT_SORT,
       sortDirection: searchParams.get('sortDirection') || DEFAULT_SORT_DIRECTION,
       q: searchParams.get('q') || undefined,
@@ -84,14 +84,13 @@ export const useFilters = (): UseFiltersResult => {
     setSearchParams(params);
   }, [searchParams, setSearchParams]);
 
-  // Clear all filters (keep sort and status as defaults)
+  // Clear all filters (keep sort as default)
   const clearFilters = useCallback(() => {
     const params = new URLSearchParams();
 
-    // Set default sort and status
+    // Set default sort only
     params.set('sortBy', DEFAULT_SORT);
     params.set('sortDirection', DEFAULT_SORT_DIRECTION);
-    params.set('status', DEFAULT_STATUS);
 
     setSearchParams(params);
   }, [setSearchParams]);

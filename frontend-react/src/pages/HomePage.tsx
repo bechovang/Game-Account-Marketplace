@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery, useApolloClient } from '@apollo/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { GET_ACCOUNTS, GET_GAMES } from '../services/graphql/queries';
 import { useFilters, useDebouncedSearch } from '../hooks/useFilters';
+import { useAccountUpdates } from '../hooks/useAccountUpdates';
+import { addAccountToCache } from '../utils/apolloCache';
+import type { AccountUpdateMessageUnion } from '../types/accountUpdates';
 import AccountCard from '../components/account/AccountCard';
 import FilterSidebar from '../components/search/FilterSidebar';
 import SortDropdown from '../components/search/SortDropdown';
@@ -50,7 +53,11 @@ interface AccountsResponse {
 const HomePage: React.FC<HomePageProps> = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const client = useApolloClient();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Enable real-time account updates
+  useAccountUpdates();
   const { filters, setFilter, clearFilters } = useFilters();
   const { searchTerm, setSearchTerm, debouncedSearch, isDebouncing } = useDebouncedSearch(300);
   const [allAccounts, setAllAccounts] = useState<Account[]>([]);
@@ -58,6 +65,11 @@ const HomePage: React.FC<HomePageProps> = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const isFetchingRef = useRef(false);
+
+  // Handler for removing accounts from local state when sold
+  const handleAccountRemove = useCallback((accountId: string) => {
+    setAllAccounts((prev) => prev.filter((a) => a.id !== accountId));
+  }, []);
 
   // Games query
   const { data: gamesData, loading: gamesLoading, error: gamesError } = useQuery(GET_GAMES, {
@@ -67,6 +79,10 @@ const HomePage: React.FC<HomePageProps> = () => {
   const games = gamesData?.games || [];
 
   // Accounts query with all filters (using debounced search)
+  const statusValue = (filters.status || undefined) as 'APPROVED' | 'PENDING' | undefined;
+  console.log('HomePage filters:', filters);
+  console.log('HomePage status value being sent:', statusValue);
+
   const { data: accountsData, loading: accountsLoading, error: accountsError, refetch, previousData } = useQuery(GET_ACCOUNTS, {
     variables: {
       gameId: filters.gameId || undefined,
@@ -75,14 +91,14 @@ const HomePage: React.FC<HomePageProps> = () => {
       minLevel: filters.minLevel,
       maxLevel: filters.maxLevel,
       rank: filters.rank,
-      status: (filters.status || 'APPROVED') as 'APPROVED' | 'PENDING',
+      status: statusValue,
       sortBy: filters.sortBy || 'createdAt',
       sortDirection: (filters.sortDirection || 'DESC') as 'ASC' | 'DESC',
       page: currentPage,
       limit: 12,
       q: debouncedSearch || undefined, // Use debounced search
     },
-    fetchPolicy: 'cache-and-network',
+    fetchPolicy: 'network-only', // Bypass cache to ensure fresh data
     onCompleted: (data) => {
       if (currentPage === 0) {
         setAllAccounts(data.accounts.content);
@@ -111,6 +127,41 @@ const HomePage: React.FC<HomePageProps> = () => {
     isFetchingRef.current = false;
   }, [filters.gameId, filters.minPrice, filters.maxPrice, filters.minLevel, filters.maxLevel, filters.rank, filters.status, filters.sortBy, filters.sortDirection, debouncedSearch]);
 
+  // Listen for real-time account updates
+  useEffect(() => {
+    const handleAccountUpdate = (event: CustomEvent<AccountUpdateMessageUnion>) => {
+      const message = event.detail;
+
+      if (message.type === 'new_account_posted') {
+        // Add new account to cache
+        addAccountToCache(client, message.accountData as any);
+
+        // If we're on page 0, add to local state for immediate update
+        if (currentPage === 0) {
+          setAllAccounts((prev) => {
+            // Avoid duplicates
+            if (prev.some((a) => a.id === message.accountData.id)) {
+              return prev;
+            }
+            return [message.accountData as any, ...prev];
+          });
+        } else {
+          // For pages > 0, just show a toast notification (already shown by useAccountUpdates hook)
+          console.log('New account posted on page 0, but user is on page:', currentPage);
+        }
+      } else if (message.type === 'account_status_changed') {
+        // Handle status change - will be processed by AccountCard
+        console.log(`Account ${message.accountId} status changed: ${message.oldStatus} -> ${message.newStatus}`);
+      }
+    };
+
+    window.addEventListener('account-update', handleAccountUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('account-update', handleAccountUpdate as EventListener);
+    };
+  }, [client, currentPage]);
+
   // Memoized load more function
   const loadMoreAccounts = useCallback(() => {
     if (isFetchingRef.current || accountsLoading) {
@@ -129,7 +180,7 @@ const HomePage: React.FC<HomePageProps> = () => {
         minLevel: filters.minLevel,
         maxLevel: filters.maxLevel,
         rank: filters.rank,
-        status: (filters.status || 'APPROVED') as 'APPROVED' | 'PENDING',
+        status: filters.status as 'APPROVED' | 'PENDING' | undefined,
         sortBy: filters.sortBy || 'createdAt',
         sortDirection: (filters.sortDirection || 'DESC') as 'ASC' | 'DESC',
         page: nextPage,
@@ -317,12 +368,12 @@ const HomePage: React.FC<HomePageProps> = () => {
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {allAccounts.map((account: Account, index) => (
-                    <div 
-                      key={account.id} 
+                    <div
+                      key={account.id}
                       className="animate-fade-in-up"
                       style={{ animationDelay: `${index * 0.05}s` }}
                     >
-                      <AccountCard account={account} />
+                      <AccountCard account={account} onRemove={handleAccountRemove} />
                     </div>
                   ))}
                 </div>

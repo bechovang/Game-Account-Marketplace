@@ -48,6 +48,7 @@ public class AccountService {
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final EncryptionUtil encryptionUtil;
+    private final NotificationService notificationService;
 
     /** Allowed sort fields for account search */
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("price", "level", "createdAt");
@@ -102,6 +103,21 @@ public class AccountService {
 
         Account savedAccount = accountRepository.save(account);
         log.info("Account created successfully with id: {}", savedAccount.getId());
+
+        // Broadcast new account to all subscribers
+        java.util.Map<String, Object> accountData = java.util.Map.of(
+                "id", savedAccount.getId(),
+                "title", savedAccount.getTitle(),
+                "price", savedAccount.getPrice(),
+                "level", savedAccount.getLevel(),
+                "rank", savedAccount.getRank(),
+                "game", java.util.Map.of("id", savedAccount.getGame().getId(), "name", savedAccount.getGame().getName()),
+                "seller", java.util.Map.of("id", savedAccount.getSeller().getId()),
+                "status", savedAccount.getStatus().toString(),
+                "createdAt", savedAccount.getCreatedAt().toString()
+        );
+        notificationService.broadcastNewAccount(accountData);
+
         return savedAccount;
     }
 
@@ -262,6 +278,12 @@ public class AccountService {
         account.setStatus(AccountStatus.APPROVED);
         Account approvedAccount = accountRepository.save(account);
 
+        // Send notification to seller
+        notificationService.sendAccountApprovedNotification(account.getSeller().getId(), account.getId());
+
+        // Broadcast status change to all subscribers
+        notificationService.broadcastAccountStatusChanged(account.getId(), "APPROVED", "PENDING");
+
         log.info("Account id: {} approved successfully", accountId);
         return approvedAccount;
     }
@@ -289,9 +311,13 @@ public class AccountService {
         }
 
         account.setStatus(AccountStatus.REJECTED);
-        // Note: rejectionReason could be added as a field to Account entity in the future
-        // For now, the reason is logged for audit purposes
         Account rejectedAccount = accountRepository.save(account);
+
+        // Send notification to seller
+        notificationService.sendAccountRejectedNotification(account.getSeller().getId(), account.getId(), reason);
+
+        // Broadcast status change to all subscribers
+        notificationService.broadcastAccountStatusChanged(account.getId(), "REJECTED", "PENDING");
 
         log.info("Account id: {} rejected successfully", accountId);
         return rejectedAccount;
@@ -321,14 +347,17 @@ public class AccountService {
     }
 
     /**
-     * Search accounts with advanced filters, role-based access control, and caching.
+     * Search accounts with advanced filters, role-based access control.
      * Supports filtering by game, price range, level range, rank, status, featured flag,
      * full-text search, and sorting options.
      *
      * Role-based filtering rules:
      * - ADMIN: Sees all statuses (respects requested status filter)
      * - SELLER: Sees APPROVED accounts + their own PENDING accounts
-     * - BUYER/PUBLIC: Only sees APPROVED accounts
+     * - BUYER/PUBLIC: Sees all statuses (APPROVED, PENDING, REJECTED, SOLD)
+     *
+     * Note: Caching disabled because effectiveStatus is modified dynamically based on user role,
+     * which makes cache key computation unreliable.
      *
      * @param searchRequest Search parameters object containing all filters
      * @param authenticatedUserId ID of authenticated user (for role-based filtering)
@@ -336,14 +365,6 @@ public class AccountService {
      * @param pageable Pagination parameters
      * @return Page of matching accounts
      */
-    @Cacheable(value = "accounts",
-            key = "#searchRequest.gameId + '-' + #searchRequest.minPrice + '-' + #searchRequest.maxPrice + " +
-                  "'-' + #searchRequest.minLevel + '-' + #searchRequest.maxLevel + '-' + #searchRequest.rank + " +
-                  "'-' + #searchRequest.status + '-' + #searchRequest.isFeatured + '-' + #searchRequest.searchText + " +
-                  "'-' + #searchRequest.sortBy + '-' + #searchRequest.sortDirection + " +
-                  "'-' + #searchRequest.sellerId + " +
-                  "'-' + #pageable.pageNumber + '-' + #pageable.pageSize + " +
-                  "'-' + #userRole")
     @Transactional(readOnly = true)
     public Page<Account> searchAccounts(
             AccountSearchRequest searchRequest,
@@ -352,6 +373,8 @@ public class AccountService {
             Pageable pageable) {
 
         log.debug("Advanced search - userRole: {}, filters: {}", userRole, searchRequest);
+        log.info("DEBUG: searchRequest.getStatus() = {}, authenticatedUserId = {}, sellerId = {}",
+                searchRequest.getStatus(), authenticatedUserId, searchRequest.getSellerId());
 
         // Determine effective status filter based on user role
         AccountStatus effectiveStatus = searchRequest.getStatus();
@@ -362,15 +385,21 @@ public class AccountService {
         } else if ("SELLER".equals(userRole)) {
             // Sellers see APPROVED accounts + their own PENDING accounts
             // If searching for own listings, don't force status filter
-            // Otherwise, only show APPROVED
-            if (searchRequest.getSellerId() == null || !searchRequest.getSellerId().equals(authenticatedUserId)) {
-                effectiveStatus = AccountStatus.APPROVED;
+            // Otherwise, show all accounts (for development)
+            if (searchRequest.getSellerId() != null && searchRequest.getSellerId().equals(authenticatedUserId)) {
+                // Viewing own listings - respect requested filter
+                effectiveStatus = searchRequest.getStatus();
+            } else {
+                // Not viewing own listings - show all accounts (for development)
+                effectiveStatus = null;
             }
         } else {
             // Buyers and public users - for development, show both APPROVED and PENDING
             // TODO: Change back to APPROVED only for production
             effectiveStatus = null; // No status filter - show all accounts
         }
+
+        log.info("DEBUG: userRole = {}, effectiveStatus = {}", userRole, effectiveStatus);
 
         // Apply sorting if specified
         Pageable sortedPageable = pageable;

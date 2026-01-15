@@ -89,16 +89,16 @@ development_status:
   epic-4-retrospective: done
 
   # Epic 5: Real-time Communication (8 stories)
-  epic-5: backlog
-  5-1-message-entity-repository: backlog
-  5-2-websocket-stomp-configuration: backlog
-  5-3-chatservice-message-handlers: backlog
-  5-4-notificationservice-broadcasts: backlog
-  5-5-frontend-websocket-client-setup: backlog
-  5-6-chat-ui-components: backlog
-  5-7-notification-components: backlog
-  5-8-real-time-account-updates: backlog
-  epic-5-retrospective: optional
+  epic-5: done
+  5-1-message-entity-repository: done
+  5-2-websocket-stomp-configuration: done
+  5-3-chatservice-message-handlers: done
+  5-4-notificationservice-broadcasts: done
+  5-5-frontend-websocket-client-setup: done
+  5-6-chat-ui-components: done
+  5-7-notification-components: done
+  5-8-real-time-account-updates: done
+  epic-5-retrospective: done
 
   # Epic 6: Reviews & Reputation (6 stories)
   epic-6: backlog

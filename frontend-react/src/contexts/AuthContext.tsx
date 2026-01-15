@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiClient } from '../services/rest/axiosInstance';
+import { websocketService } from '../services/websocket/websocketService';
 
 interface User {
   id: number;
@@ -55,6 +56,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const userProfile = await fetchUserProfile(storedToken);
         if (userProfile) {
           setUser(userProfile);
+          // Connect to WebSocket with stored token
+          websocketService.connect(storedToken);
         } else {
           // Token was invalid, clear it
           setToken(null);
@@ -80,6 +83,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(response.token);
       setUser(userData);
       localStorage.setItem('access_token', response.token);
+      // Connect to WebSocket
+      websocketService.connect(response.token);
       window.location.href = '/'; // Redirect to home
     } catch (error) {
       console.error('Login failed:', error);
@@ -90,6 +95,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
+    // Disconnect from WebSocket
+    websocketService.disconnect();
     setUser(null);
     setToken(null);
     localStorage.removeItem('access_token');

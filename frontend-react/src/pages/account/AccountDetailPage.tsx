@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_ACCOUNT } from '../../services/graphql/queries';
 import { ADD_TO_FAVORITES, REMOVE_FROM_FAVORITES } from '../../services/graphql/mutations';
@@ -12,17 +12,20 @@ import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { ShoppingCart } from 'lucide-react';
+import type { AccountStatusChangedMessage } from '../../types/accountUpdates';
+import { toast as sonnerToast } from 'sonner';
 
 interface AccountDetailPageProps {}
 
 const AccountDetailPage: React.FC<AccountDetailPageProps> = () => {
   const { accountId } = useParams<{ accountId: string }>();
+  const navigate = useNavigate();
   const incrementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const { user } = useAuth();
 
   // GraphQL query for account details
-  const { data, loading, error } = useQuery(GET_ACCOUNT, {
+  const { data, loading, error, refetch } = useQuery(GET_ACCOUNT, {
     variables: { id: accountId ? parseInt(accountId) : 0 },
     fetchPolicy: 'cache-and-network',
     onError: (error) => {
@@ -96,6 +99,35 @@ const AccountDetailPage: React.FC<AccountDetailPageProps> = () => {
       };
     }
   }, [accountId]);
+
+  // Listen for real-time account status changes
+  useEffect(() => {
+    const handleAccountUpdate = (event: CustomEvent<AccountStatusChangedMessage>) => {
+      const message = event.detail;
+
+      // Only process if this update is for this account
+      if (message.accountId !== accountId) return;
+
+      if (message.newStatus === 'SOLD') {
+        // Check if current user is the buyer
+        const account = data?.account;
+        if (account?.buyer?.id !== user?.id) {
+          sonnerToast.info('This account has been sold');
+          setTimeout(() => navigate('/'), 2000);
+        }
+      } else {
+        // For other status changes, refresh the data
+        // Refetch to get latest data
+        refetch();
+      }
+    };
+
+    window.addEventListener('account-update', handleAccountUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('account-update', handleAccountUpdate as EventListener);
+    };
+  }, [accountId, data, user, navigate, refetch]);
 
   const incrementViewCount = async (id: number) => {
     try {
